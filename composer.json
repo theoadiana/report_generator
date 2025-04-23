@@ -1,0 +1,14 @@
+{
+    "name": "theob/test",
+    "description": "test",
+    "type": "library",
+    "autoload": {
+        "psr-4": {
+            "Theob\\Test\\": "src/"
+        }
+    },
+    "require": {
+        "phpoffice/phpspreadsheet": "^4.1",
+        "dompdf/dompdf": "^3.1"
+    }
+}
