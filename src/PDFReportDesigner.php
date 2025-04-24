@@ -11,6 +11,7 @@ class PDFReportDesigner
     private string $fontStyle = 'font-family: Arial, sans-serif;';
     private string|array $paperSize = 'A4';
     private string $paperOrientation = 'portrait';
+    private string $footer = '';
 
     // Metadata
     private string $metaTitle = '';
@@ -70,6 +71,11 @@ class PDFReportDesigner
         $this->metaSubject = $metaSubject;
     }
 
+    public function setFooter(string $footer): void
+    {
+        $this->footer = $footer;
+    }
+
     public function getFontStyle(): string
     {
         return $this->fontStyle;
@@ -96,34 +102,89 @@ class PDFReportDesigner
     }
 
     public function generateHTML(array $data): string
-    {
-        if (empty($data)) {
-            return '<p>Tidak ada data untuk ditampilkan.</p>';
-        }
+{
+    if (empty($data)) {
+        return '<p>Tidak ada data untuk ditampilkan.</p>';
+    }
 
-        $html = '<html><head><style>body{' . $this->fontStyle . '}</style></head><body>';
+    $footerText = addslashes($this->footer); // Hindari konflik karakter khusus
 
-        if (!empty($this->title)) {
-            $html .= '<h1 style="text-align: center;">' . htmlspecialchars($this->title) . '</h1>';
-        }
+    $html = '<html><head>
+        <meta name="title" content="' . htmlspecialchars($this->metaTitle) . '">
+        <meta name="author" content="' . htmlspecialchars($this->metaAuthor) . '">
+        <meta name="subject" content="' . htmlspecialchars($this->metaSubject) . '">
+        <style>
+            body { ' . $this->fontStyle . ' }
+            @page {
+                margin: 100px 50px 100px 50px;
+            }
+            table {
+                width: 100%;
+                table-layout: fixed;
+                word-wrap: break-word;
+            }
+            th, td {
+                max-width: 100%;
+            }
+        </style>
+    </head><body>';
 
-        $html .= '<table style="' . $this->tableStyle . '" border="1">';
-        $html .= '<tr style="background-color: ' . $this->headerColor . ';">';
+    // Judul
+    if (!empty($this->title)) {
+        $html .= '<h1 style="text-align: center;">' . htmlspecialchars($this->title) . '</h1>';
+    }
 
-        foreach (array_keys($data[0]) as $column) {
-            $html .= '<th style="' . $this->headerStyle . '">' . htmlspecialchars($column) . '</th>';
+    // Info ukuran kertas & orientasi
+    $html .= '<p style="text-align:center; font-size: 12px;">Ukuran Kertas: ' . htmlspecialchars($this->paperSize) . ', Orientasi: ' . htmlspecialchars($this->paperOrientation) . '</p>';
+
+    // Tabel
+    $html .= '<table style="' . $this->tableStyle . '" border="1">';
+    $html .= '<tr style="background-color: ' . $this->headerColor . ';">';
+
+    foreach (array_keys($data[0]) as $column) {
+        $html .= '<th style="' . $this->headerStyle . '">' . htmlspecialchars($column) . '</th>';
+    }
+
+    $html .= '</tr>';
+
+    foreach ($data as $row) {
+        $html .= '<tr>';
+        foreach ($row as $cell) {
+            $html .= '<td style="' . $this->rowStyle . '; border: ' . $this->borderStyle . ';">' . htmlspecialchars($cell) . '</td>';
         }
         $html .= '</tr>';
-
-        foreach ($data as $row) {
-            $html .= '<tr>';
-            foreach ($row as $cell) {
-                $html .= '<td style="' . $this->rowStyle . '; border: ' . $this->borderStyle . ';">' . htmlspecialchars($cell) . '</td>';
-            }
-            $html .= '</tr>';
-        }
-
-        $html .= '</table></body></html>';
-        return $html;
     }
+
+    // Footer tabel (opsional)
+    if (!empty($this->footer)) {
+        $html .= '<tfoot>';
+        $html .= '<tr>';
+        $html .= '<td colspan="' . count(array_keys($data[0])) . '" style="text-align: center; font-weight: bold;">' . htmlspecialchars($this->footer) . '</td>';
+        $html .= '</tr>';
+        $html .= '</tfoot>';
+    }
+
+    $html .= '</table>';
+
+    // Footer halaman PDF (bottom)
+    $html .= '
+    <script type="text/php">
+        if (isset($pdf)) {
+            $pdf->page_script(function ($pageNumber, $pageCount, $pdf) {
+                $font = $pdf->getFontMetrics()->getFont("Helvetica", "normal");
+                $text = "' . $footerText . ' - Halaman $pageNumber dari $pageCount";
+                $width = $pdf->get_width();
+                $textWidth = $pdf->getFontMetrics()->getTextWidth($text, $font, 10);
+                $x = ($width - $textWidth) / 2;
+                $pdf->text($x, 820, $text, $font, 10);
+            });
+        }
+    </script>';
+
+    $html .= '</body></html>';
+
+    return $html;
+}
+
+
 }

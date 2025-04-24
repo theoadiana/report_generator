@@ -55,6 +55,7 @@ if (isset($_GET['type'])) {
         $metaTitle = $_GET['metaTitle'] ?? '';
         $metaAuthor = $_GET['metaAuthor'] ?? '';
         $metaSubject = $_GET['metaSubject'] ?? '';
+        $footer = $_GET['footer'] ?? '';
 
 
         $designer = new PDFReportDesigner();
@@ -71,6 +72,7 @@ if (isset($_GET['type'])) {
         }
         $designer->setPaperOrientation($paperOrientation);
         $designer->setMetadata($metaTitle, $metaAuthor, $metaSubject);
+        $designer->setFooter($footer);
 
         // Set desain ke ReportGenerator
         $reportGenerator->setDesignerPDF($designer);

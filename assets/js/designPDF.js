@@ -2,10 +2,21 @@
 const previewButton = document.querySelector("#report_generator_previewPDF");
 const downloadButton = document.querySelector("#report_generator_downloadPDF");
 const inputFields = document.querySelectorAll('input, select, textarea');
-const paperSizeSelect = document.getElementById("paperSize");
 const customPaperInputs = document.getElementById("customPaperInputs");
 const customWidth = document.getElementById("customWidth");
 const customHeight = document.getElementById("customHeight");
+const titleSelect = document.getElementById("title");
+const headerStyleSelect = document.getElementById("header");
+const rowStyleSelect = document.getElementById("rowStyle");
+const tableStyleSelect = document.getElementById("tableStyle");
+const headerColorSelect = document.getElementById("headerColor");
+const borderStyleSelect = document.getElementById("borderStyle");
+const paperSizeSelect = document.getElementById("paperSize");
+const paperOrientationSelect = document.getElementById("paperOrientation");
+const metaTitleSelect = document.getElementById("metaTitle");
+const metaAuthorSelect = document.getElementById("metaAuthor");
+const metaSubjectSelect = document.getElementById("metaSubject");
+const footerSelect = document.getElementById("footer");
 
 // Fungsi Preview
 async function generatePreview() {
@@ -16,18 +27,19 @@ async function generatePreview() {
         return;
     }
 
-    const getValue = id => document.getElementById(id)?.value || '';
-    const title = getValue('title');
-    const headerStyle = getValue('headerStyle');
-    const rowStyle = getValue('rowStyle');
-    const tableStyle = getValue('tableStyle');
-    const headerColor = getValue('headerColor');
-    const borderStyle = getValue('borderStyle');
-    const paperSize = getValue('paperSize');
-    const paperOrientation = getValue('paperOrientation');
-    const metaTitle = getValue('metaTitle');
-    const metaAuthor = getValue('metaAuthor');
-    const metaSubject = getValue('metaSubject');
+    const getValue = selection => selection?.value || '';
+    const title = getValue(titleSelect);
+    const headerStyle = getValue(headerStyleSelect);
+    const rowStyle = getValue(rowStyleSelect);
+    const tableStyle = getValue(tableStyleSelect);
+    const headerColor = getValue(headerColorSelect);
+    const borderStyle = getValue(borderStyleSelect);
+    const paperSize = getValue(paperSizeSelect);
+    const paperOrientation = getValue(paperOrientationSelect);
+    const metaTitle = getValue(metaTitleSelect);
+    const metaAuthor = getValue(metaAuthorSelect);
+    const metaSubject = getValue(metaSubjectSelect);
+    const footer = getValue(footerSelect);
 
     const headers = Object.keys(data[0]);
     let html = `<html><head>
@@ -65,6 +77,11 @@ async function generatePreview() {
         });
         html += `</tr>`;
     });
+    html += `<tfoot>`;
+    html += `<tr>`;
+    html += `<td colspan="${headers.length}" style="text-align: center; font-weight: bold;">${footer}</td>`;
+    html += `</tr>`;
+    html += `</tfoot>`;
     html += `</table></body></html>`;
     document.getElementById('preview').innerHTML = html;
 }
@@ -79,18 +96,20 @@ function toggleCustomInputs() {
 
 // Fungsi Download PDF
 function downloadPDF() {
-    const getValue = id => document.getElementById(id)?.value || '';
-    const title = getValue('title');
-    const headerStyle = getValue('headerStyle');
-    const rowStyle = getValue('rowStyle');
-    const tableStyle = getValue('tableStyle');
-    const headerColor = getValue('headerColor');
-    const borderStyle = getValue('borderStyle');
-    const paperSize = getValue('paperSize');
-    const paperOrientation = getValue('paperOrientation');
-    const metaTitle = getValue('metaTitle');
-    const metaAuthor = getValue('metaAuthor');
-    const metaSubject = getValue('metaSubject');
+    const getValue = selection => selection?.value || '';
+    const title = getValue(titleSelect);
+    const headerStyle = getValue(headerStyleSelect);
+    const rowStyle = getValue(rowStyleSelect);
+    const tableStyle = getValue(tableStyleSelect);
+    const headerColor = getValue(headerColorSelect);
+    const borderStyle = getValue(borderStyleSelect);
+    const paperSize = getValue(paperSizeSelect);
+    const paperOrientation = getValue(paperOrientationSelect);
+    const metaTitle = getValue(metaTitleSelect);
+    const metaAuthor = getValue(metaAuthorSelect);
+    const metaSubject = getValue(metaSubjectSelect);
+    const footer = getValue(footerSelect);
+
 
     const params = new URLSearchParams({
         type: 'pdf',
@@ -104,7 +123,8 @@ function downloadPDF() {
         paperOrientation,
         metaTitle,
         metaAuthor,
-        metaSubject
+        metaSubject,
+        footer
     });
 
     // Jika custom, tambahkan width dan height
@@ -132,7 +152,7 @@ function downloadPDF() {
 
 function setPreviewSize() {
     const paperSize = paperSizeSelect.value;
-    const paperOrientation = document.getElementById('paperOrientation').value;
+    const paperOrientation = paperOrientationSelect.value;
     const previewElement = document.getElementById('preview');
 
     let width = 210, height = 297; // Default A4 ukuran mm
@@ -177,6 +197,7 @@ toggleCustomInputs();
 
 // Tambahkan event listener untuk mengatur ukuran preview
 paperSizeSelect.addEventListener("change", setPreviewSize);
+paperOrientationSelect.addEventListener("change", setPreviewSize);
 customWidth.addEventListener("input", setPreviewSize);
 customHeight.addEventListener("input", setPreviewSize);
 

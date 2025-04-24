@@ -73,6 +73,11 @@ require_once __DIR__ . '/public/download.php';
         </select>
       </div>
       <div>
+        <label class="block text-sm font-medium">Footer</label>
+        <input type="text" id="footer" class="w-full mt-1 p-2 border rounded" placeholder="Copyright 2023">
+        <small class="text-gray-600">Masukkan footer untuk laporan Anda</small>
+      </div>
+      <div>
         <label class="block text-sm font-medium">Judul Metadata (PDF Title)</label>
         <input type="text" id="metaTitle" class="w-full mt-1 p-2 border rounded" placeholder="Judul dokumen PDF">
       </div>
@@ -87,9 +92,7 @@ require_once __DIR__ . '/public/download.php';
         <input type="text" id="metaSubject" class="w-full mt-1 p-2 border rounded"
           placeholder="Deskripsi singkat laporan">
       </div>
-
     </div>
-
     <div class="flex flex-wrap gap-4 mt-4">
       <button id="report_generator_previewPDF" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
         Preview Desain
@@ -99,7 +102,6 @@ require_once __DIR__ . '/public/download.php';
         Download PDF
       </button>
     </div>
-
     <div class="mt-6">
       <h3 class="text-lg font-semibold mb-2">Preview Output:</h3>
       <div id="preview" class="bg-white p-4 border rounded shadow-inner overflow-auto"></div>
