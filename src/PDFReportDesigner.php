@@ -102,14 +102,14 @@ class PDFReportDesigner
     }
 
     public function generateHTML(array $data): string
-{
-    if (empty($data)) {
-        return '<p>Tidak ada data untuk ditampilkan.</p>';
-    }
+    {
+        if (empty($data)) {
+            return '<p>Tidak ada data untuk ditampilkan.</p>';
+        }
 
-    $footerText = addslashes($this->footer); // Hindari konflik karakter khusus
+        $footerText = addslashes($this->footer); // Hindari konflik karakter khusus
 
-    $html = '<html><head>
+        $html = '<html><head>
         <meta name="title" content="' . htmlspecialchars($this->metaTitle) . '">
         <meta name="author" content="' . htmlspecialchars($this->metaAuthor) . '">
         <meta name="subject" content="' . htmlspecialchars($this->metaSubject) . '">
@@ -129,45 +129,45 @@ class PDFReportDesigner
         </style>
     </head><body>';
 
-    // Judul
-    if (!empty($this->title)) {
-        $html .= '<h1 style="text-align: center;">' . htmlspecialchars($this->title) . '</h1>';
-    }
-
-    // Info ukuran kertas & orientasi
-    $html .= '<p style="text-align:center; font-size: 12px;">Ukuran Kertas: ' . htmlspecialchars($this->paperSize) . ', Orientasi: ' . htmlspecialchars($this->paperOrientation) . '</p>';
-
-    // Tabel
-    $html .= '<table style="' . $this->tableStyle . '" border="1">';
-    $html .= '<tr style="background-color: ' . $this->headerColor . ';">';
-
-    foreach (array_keys($data[0]) as $column) {
-        $html .= '<th style="' . $this->headerStyle . '">' . htmlspecialchars($column) . '</th>';
-    }
-
-    $html .= '</tr>';
-
-    foreach ($data as $row) {
-        $html .= '<tr>';
-        foreach ($row as $cell) {
-            $html .= '<td style="' . $this->rowStyle . '; border: ' . $this->borderStyle . ';">' . htmlspecialchars($cell) . '</td>';
+        // Judul
+        if (!empty($this->title)) {
+            $html .= '<h1 style="text-align: center;">' . htmlspecialchars($this->title) . '</h1>';
         }
+
+        // Info ukuran kertas & orientasi
+        $html .= '<p style="text-align:center; font-size: 12px;">Ukuran Kertas: ' . htmlspecialchars($this->paperSize) . ', Orientasi: ' . htmlspecialchars($this->paperOrientation) . '</p>';
+
+        // Tabel
+        $html .= '<table style="' . $this->tableStyle . '" border="1">';
+        $html .= '<tr style="background-color: ' . $this->headerColor . ';">';
+
+        foreach (array_keys($data[0]) as $column) {
+            $html .= '<th style="' . $this->headerStyle . '">' . htmlspecialchars($column) . '</th>';
+        }
+
         $html .= '</tr>';
-    }
 
-    // Footer tabel (opsional)
-    if (!empty($this->footer)) {
-        $html .= '<tfoot>';
-        $html .= '<tr>';
-        $html .= '<td colspan="' . count(array_keys($data[0])) . '" style="text-align: center; font-weight: bold;">' . htmlspecialchars($this->footer) . '</td>';
-        $html .= '</tr>';
-        $html .= '</tfoot>';
-    }
+        foreach ($data as $row) {
+            $html .= '<tr>';
+            foreach ($row as $cell) {
+                $html .= '<td style="' . $this->rowStyle . '; border: ' . $this->borderStyle . ';">' . htmlspecialchars($cell) . '</td>';
+            }
+            $html .= '</tr>';
+        }
 
-    $html .= '</table>';
+        // Footer tabel (opsional)
+        if (!empty($this->footer)) {
+            $html .= '<tfoot>';
+            $html .= '<tr>';
+            $html .= '<td colspan="' . count(array_keys($data[0])) . '" style="text-align: center; font-weight: bold;">' . htmlspecialchars($this->footer) . '</td>';
+            $html .= '</tr>';
+            $html .= '</tfoot>';
+        }
 
-    // Footer halaman PDF (bottom)
-    $html .= '
+        $html .= '</table>';
+
+        // Footer halaman PDF (bottom)
+        $html .= '
     <script type="text/php">
         if (isset($pdf)) {
             $pdf->page_script(function ($pageNumber, $pageCount, $pdf) {
@@ -181,10 +181,10 @@ class PDFReportDesigner
         }
     </script>';
 
-    $html .= '</body></html>';
+        $html .= '</body></html>';
 
-    return $html;
-}
+        return $html;
+    }
 
 
 }
