@@ -3,15 +3,16 @@
 class PDFReportDesigner
 {
     private string $title = '';
+    private string $titleStyle = '';
     private string $headerStyle = 'font-size: 16px; font-weight: bold; text-align: left; background-color: #f0f0f0;';
     private string $rowStyle = 'font-size: 12px;';
     private string $tableStyle = 'width: 100%; border-collapse: collapse;';
     private string $headerColor = '#f0f0f0';
-    private string $borderStyle = '1px solid #000';
     private string $fontStyle = 'font-family: Arial, sans-serif;';
     private string|array $paperSize = 'A4';
     private string $paperOrientation = 'portrait';
     private string $footer = '';
+    private array $columnWidths = [];
 
     // Metadata
     private string $metaTitle = '';
@@ -22,6 +23,11 @@ class PDFReportDesigner
     public function setTitle(string $title): void
     {
         $this->title = $title;
+    }
+
+    public function setTitleStyle(string $titleStyle): void
+    {
+        $this->titleStyle = $titleStyle;
     }
 
     public function setHeaderStyle(string $headerStyle): void
@@ -42,11 +48,6 @@ class PDFReportDesigner
     public function setHeaderColor(string $headerColor): void
     {
         $this->headerColor = $headerColor;
-    }
-
-    public function setBorderStyle(string $borderStyle): void
-    {
-        $this->borderStyle = $borderStyle;
     }
 
     public function setFontStyle(string $fontStyle): void
@@ -76,6 +77,16 @@ class PDFReportDesigner
         $this->footer = $footer;
     }
 
+    public function setColumnWidths(array $widths): void
+    {
+        $this->columnWidths = $widths;
+    }
+
+    public function getTitleStyle(): string
+    {
+        return $this->titleStyle;
+    }
+
     public function getFontStyle(): string
     {
         return $this->fontStyle;
@@ -99,6 +110,11 @@ class PDFReportDesigner
             'author' => $this->metaAuthor,
             'subject' => $this->metaSubject
         ];
+    }
+
+    public function getColumnWidths(): array
+    {
+        return $this->columnWidths;
     }
 
     public function generateHTML(array $data): string
@@ -131,27 +147,28 @@ class PDFReportDesigner
 
         // Judul
         if (!empty($this->title)) {
-            $html .= '<h1 style="text-align: center;">' . htmlspecialchars($this->title) . '</h1>';
+            $html .= '<h1 style="' . $this->titleStyle . '">' . htmlspecialchars($this->title) . '</h1>';
         }
-
-        // Info ukuran kertas & orientasi
-        $html .= '<p style="text-align:center; font-size: 12px;">Ukuran Kertas: ' . htmlspecialchars($this->paperSize) . ', Orientasi: ' . htmlspecialchars($this->paperOrientation) . '</p>';
-
         // Tabel
-        $html .= '<table style="' . $this->tableStyle . '" border="1">';
-        $html .= '<tr style="background-color: ' . $this->headerColor . ';">';
+        $html .= '<table style="' . $this->tableStyle . ' border:1">';
 
-        foreach (array_keys($data[0]) as $column) {
-            $html .= '<th style="' . $this->headerStyle . '">' . htmlspecialchars($column) . '</th>';
+        $columns = array_keys($data[0]);
+        foreach ($columns as $index => $column) {
+            $width = $this->columnWidths[$index] ?? null;
+            $widthStyle = $width ? "width: $width;" : "";
+            $html .= '<th style="' . $widthStyle . $this->headerStyle . '">' . htmlspecialchars($column) . '</th>';
         }
 
         $html .= '</tr>';
 
         foreach ($data as $row) {
             $html .= '<tr>';
-            foreach ($row as $cell) {
-                $html .= '<td style="' . $this->rowStyle . '; border: ' . $this->borderStyle . ';">' . htmlspecialchars($cell) . '</td>';
+            foreach (array_values($row) as $i => $cell) {
+                $width = $this->columnWidths[$i] ?? null;
+                $widthStyle = $width ? "width: $width;" : "";
+                $html .= '<td style="' . $widthStyle . $this->rowStyle . '">' . htmlspecialchars($cell) . '</td>';
             }
+
             $html .= '</tr>';
         }
 
@@ -183,8 +200,25 @@ class PDFReportDesigner
 
         $html .= '</body></html>';
 
+        echo2file($html);
         return $html;
     }
-
+    public function echo2file_arr($handle, $arr, $space) {
+        $space += 2;
+        fwrite($handle, "\n");
+        foreach($arr as $key=>$value)
+            if (is_array($value)) {
+                fwrite($handle, $key . "=>");
+                echo2file_arr($handle,$value,$space);
+            } else {
+                fwrite($handle, str_repeat("",$space).$key."=>".$value."\n");
+            }
+    }
+    
+    public function echo2file($par) {
+        $handle = fopen("errorCheckPHP.txt",'a');
+        if (is_array($par)) echo2file_arr($handle,$par,0);
+        else fwrite($handle, $par."\n");
+    }
 
 }

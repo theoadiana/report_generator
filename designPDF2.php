@@ -14,7 +14,7 @@ require_once __DIR__ . '/public/download2.php';
 
 <body class="bg-gray-100">
     <!-- Header dengan Tabs -->
-    <div class="bg-white shadow px-6 py-2">
+    <div class="bg-white shadow px-6 py-2 sticky top-0 z-50">
         <div class="flex space-x-4 text-sm font-semibold">
             <button class="tab-button text-gray-600 hover:text-black py-2 px-3 border-b-2 border-transparent active-tab"
                 data-tab="home">Home</button>
@@ -43,7 +43,30 @@ require_once __DIR__ . '/public/download2.php';
         <div class="w-full bg-white p-4 border-b space-y-4">
             <!-- Konten Home (tools) -->
             <div class="tab-content" data-content="home">
-
+                <!-- <div>
+                    <label class="block text-sm font-medium">Title</label>
+                    <input type="text" id="title" class="w-full mt-1 p-2 border rounded" value="Laporan Bulanan">
+                </div> -->
+                <div>
+                    <label class="block text-sm font-medium">Title Font Size</label>
+                    <input type="text" class="w-full mt-1 p-2 border rounded" value="16" data-style-group="titleStyle"
+                        data-style-attr="font-size">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium">Title Font Color</label>
+                    <input type="color" class="w-full mt-1 p-2 border rounded" value="#000000"
+                        data-style-group="titleStyle" data-style-attr="color">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium">Title Text Align</label>
+                    <select class="w-full mt-1 p-2 border rounded" value="center" data-style-group="titleStyle"
+                        data-style-attr="text-align">
+                        <option value="left">Left</option>
+                        <option value="right">Right</option>
+                        <option value="center" selected>Center</option>
+                        <option value="justify">Justify</option>
+                    </select>
+                </div>
             </div>
 
             <!-- Tab Paper Settings -->
@@ -83,11 +106,13 @@ require_once __DIR__ . '/public/download2.php';
             <div class="tab-content hidden" data-content="headerStyle">
                 <div>
                     <label class="block text-sm font-medium">Font Size</label>
-                    <input type="number" id="headerStyleFontSize" class="w-full mt-1 p-2 border rounded" value="16">
+                    <input type="number" class="w-full mt-1 p-2 border rounded" value="16"
+                        data-style-group="headerStyle" data-style-attr="font-size">
                 </div>
                 <div>
-                    <label for="headerStyleFontWeight" class="block text-sm font-medium">Font Weight</label>
-                    <select id="headerStyleFontWeight" class="w-full mt-1 p-2 border rounded">
+                    <label class="block text-sm font-medium">Font Weight</label>
+                    <select class="w-full mt-1 p-2 border rounded" data-style-group="headerStyle"
+                        data-style-attr="font-weight">
                         <option value="100">100 - Thin</option>
                         <option value="200">200 - Extra Light</option>
                         <option value="300">300 - Light</option>
@@ -100,35 +125,39 @@ require_once __DIR__ . '/public/download2.php';
                     </select>
                 </div>
                 <div>
-                    <label for="headerStyleFontTextAlign" class="block text-sm font-medium">Text Align</label>
-                    <select id="headerStyleFontTextAlign" class="w-full mt-1 p-2 border rounded">
+                    <label class="block text-sm font-medium">Text Align</label>
+                    <select class="w-full mt-1 p-2 border rounded" data-style-group="headerStyle"
+                        data-style-attr="text-align">
                         <option value="left" selected>Left</option>
                         <option value="right">Right</option>
                         <option value="center">Center</option>
                         <option value="justify">Justify</option>
-                        <option value="start">Start</option>
-                        <option value="end">End</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-sm font-medium">Font Color</label>
-                    <input type="color" id="headerStyleFontColor" class="w-full mt-1 p-2 border rounded"
-                        value="#000000">
+                    <input type="color" class="w-full mt-1 p-2 border rounded" value="#000000"
+                        data-style-group="headerStyle" data-style-attr="color">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium">Header Color</label>
-                    <input type="color" id="headerColor" class="w-full mt-1 p-2 border rounded" value="#FFFFFF">
+                    <label class="block text-sm font-medium">Header Background Color</label>
+                    <input type="color" class="w-full mt-1 p-2 border rounded" value="#FFFFFF"
+                        data-style-group="headerStyle" data-style-attr="background-color">
                 </div>
             </div>
+
             <!-- Tab Row Style -->
             <div class="tab-content hidden" data-content="rowStyle">
                 <div>
                     <label class="block text-sm font-medium">Font Size</label>
-                    <input type="number" id="rowStyleFontSize" class="w-full mt-1 p-2 border rounded" value="16">
+                    <input type="number" class="w-full mt-1 p-2 border rounded" value="16" data-style-group="rowStyle"
+                        data-style-attr="font-size">
                 </div>
+
                 <div>
-                    <label for="rowStyleFontWeight" class="block text-sm font-medium">Font Weight</label>
-                    <select id="rowStyleFontWeight" class="w-full mt-1 p-2 border rounded">
+                    <label class="block text-sm font-medium">Font Weight</label>
+                    <select class="w-full mt-1 p-2 border rounded" data-style-group="rowStyle"
+                        data-style-attr="font-weight">
                         <option value="100">100 - Thin</option>
                         <option value="200">200 - Extra Light</option>
                         <option value="300">300 - Light</option>
@@ -140,28 +169,34 @@ require_once __DIR__ . '/public/download2.php';
                         <option value="900">900 - Black</option>
                     </select>
                 </div>
+
                 <div>
-                    <label for="rowStyleFontTextAlign" class="block text-sm font-medium">Text Align</label>
-                    <select id="rowStyleFontTextAlign" class="w-full mt-1 p-2 border rounded">
+                    <label class="block text-sm font-medium">Text Align</label>
+                    <select class="w-full mt-1 p-2 border rounded" data-style-group="rowStyle"
+                        data-style-attr="text-align">
                         <option value="left" selected>Left</option>
                         <option value="right">Right</option>
                         <option value="center">Center</option>
                         <option value="justify">Justify</option>
-                        <option value="start">Start</option>
-                        <option value="end">End</option>
                     </select>
                 </div>
+
                 <div>
                     <label class="block text-sm font-medium">Font Color</label>
-                    <input type="color" id="rowStyleFontColor" class="w-full mt-1 p-2 border rounded" value="#000000">
+                    <input type="color" class="w-full mt-1 p-2 border rounded" value="#000000"
+                        data-style-group="rowStyle" data-style-attr="color">
                 </div>
+
                 <div>
                     <label class="block text-sm font-medium">Border Size</label>
-                    <input type="number" id="borderStyleSize" class="w-full mt-1 p-2 border rounded" value="1">
+                    <input type="number" class="w-full mt-1 p-2 border rounded" value="1" data-style-group="rowStyle"
+                        data-style-attr="border-width">
                 </div>
+
                 <div>
-                    <label for="borderStyleType" class="block text-sm font-medium">Border Type</label>
-                    <select id="borderStyleType" class="w-full mt-1 p-2 border rounded">
+                    <label class="block text-sm font-medium">Border Type</label>
+                    <select class="w-full mt-1 p-2 border rounded" data-style-group="rowStyle"
+                        data-style-attr="border-style">
                         <option value="none">None</option>
                         <option value="solid" selected>Solid</option>
                         <option value="dashed">Dashed</option>
@@ -176,9 +211,11 @@ require_once __DIR__ . '/public/download2.php';
 
                 <div>
                     <label class="block text-sm font-medium">Border Color</label>
-                    <input type="color" id="borderStyleColor" class="w-full mt-1 p-2 border rounded" value="#000000">
+                    <input type="color" class="w-full mt-1 p-2 border rounded" value="#000000"
+                        data-style-group="rowStyle" data-style-attr="border-color">
                 </div>
             </div>
+
 
             <div class="tab-content hidden" data-content="tools">
                 <div class="mt-4">
