@@ -13,6 +13,8 @@ class PDFReportDesigner
     private string $paperOrientation = 'portrait';
     private string $footer = '';
     private array $columnWidths = [];
+    private array $customHeaders = [];
+
 
     // Metadata
     private string $metaTitle = '';
@@ -82,6 +84,12 @@ class PDFReportDesigner
         $this->columnWidths = $widths;
     }
 
+    public function setCustomHeaders(array $headers): void
+    {
+        $this->customHeaders = $headers;
+    }
+
+
     public function getTitleStyle(): string
     {
         return $this->titleStyle;
@@ -117,13 +125,19 @@ class PDFReportDesigner
         return $this->columnWidths;
     }
 
+    public function getCustomHeaders(): array
+    {
+        return $this->customHeaders;
+    }
+
+
     public function generateHTML(array $data): string
     {
         if (empty($data)) {
             return '<p>Tidak ada data untuk ditampilkan.</p>';
         }
 
-        $footerText = addslashes($this->footer); // Hindari konflik karakter khusus
+        $footerText = addslashes($this->footer); // Hindari karakter khusus
 
         $html = '<html><head>
         <meta name="title" content="' . htmlspecialchars($this->metaTitle) . '">
@@ -137,10 +151,13 @@ class PDFReportDesigner
             table {
                 width: 100%;
                 table-layout: fixed;
+                border-collapse: collapse;
                 word-wrap: break-word;
             }
             th, td {
                 max-width: 100%;
+                border: 1px solid #000;
+                padding: 8px;
             }
         </style>
     </head><body>';
@@ -149,41 +166,43 @@ class PDFReportDesigner
         if (!empty($this->title)) {
             $html .= '<h1 style="' . $this->titleStyle . '">' . htmlspecialchars($this->title) . '</h1>';
         }
-        // Tabel
-        $html .= '<table style="' . $this->tableStyle . ' border:1">';
 
+        // Tabel
+        $html .= '<table style="' . $this->tableStyle . '">';
         $columns = array_keys($data[0]);
+
+        // Header
+        $html .= '<thead><tr>';
         foreach ($columns as $index => $column) {
+            $customLabel = $this->customHeaders[$column] ?? $column;
             $width = $this->columnWidths[$index] ?? null;
             $widthStyle = $width ? "width: $width;" : "";
-            $html .= '<th style="' . $widthStyle . $this->headerStyle . '">' . htmlspecialchars($column) . '</th>';
+            $html .= '<th style="' . $widthStyle . $this->headerStyle . '">' . htmlspecialchars($customLabel) . '</th>';
         }
+        $html .= '</tr></thead>';
 
-        $html .= '</tr>';
-
+        // Data
+        $html .= '<tbody>';
         foreach ($data as $row) {
             $html .= '<tr>';
-            foreach (array_values($row) as $i => $cell) {
+            $rowValues = array_values($row);
+            foreach ($rowValues as $i => $cell) {
                 $width = $this->columnWidths[$i] ?? null;
                 $widthStyle = $width ? "width: $width;" : "";
                 $html .= '<td style="' . $widthStyle . $this->rowStyle . '">' . htmlspecialchars($cell) . '</td>';
             }
-
             $html .= '</tr>';
         }
+        $html .= '</tbody>';
 
-        // Footer tabel (opsional)
+        // Footer tabel opsional (HTML level)
         if (!empty($this->footer)) {
-            $html .= '<tfoot>';
-            $html .= '<tr>';
-            $html .= '<td colspan="' . count(array_keys($data[0])) . '" style="text-align: center; font-weight: bold;">' . htmlspecialchars($this->footer) . '</td>';
-            $html .= '</tr>';
-            $html .= '</tfoot>';
+            $html .= '<tfoot><tr><td colspan="' . count($columns) . '" style="text-align: center; font-weight: bold;">' . htmlspecialchars($this->footer) . '</td></tr></tfoot>';
         }
 
         $html .= '</table>';
 
-        // Footer halaman PDF (bottom)
+        // Footer PDF (page number)
         $html .= '
     <script type="text/php">
         if (isset($pdf)) {
@@ -200,25 +219,54 @@ class PDFReportDesigner
 
         $html .= '</body></html>';
 
-        echo2file($html);
+        echo2file($html); // Logging ke file jika diperlukan
         return $html;
     }
-    public function echo2file_arr($handle, $arr, $space) {
+
+    public function getTemplateAsArray(): array
+    {
+        $template = [
+            'title' => $this->title,
+            'titleStyle' => $this->titleStyle,
+            'headerStyle' => $this->headerStyle,
+            'rowStyle' => $this->rowStyle,
+            'tableStyle' => $this->tableStyle,
+            'headerColor' => $this->headerColor,
+            'fontStyle' => $this->fontStyle,
+            'paperSize' => $this->paperSize,
+            'paperOrientation' => $this->paperOrientation,
+            'footer' => $this->footer,
+            'columnWidths' => $this->columnWidths,
+            'customHeaders' => $this->customHeaders,
+            'metaTitle' => $this->metaTitle,
+            'metaAuthor' => $this->metaAuthor,
+            'metaSubject' => $this->metaSubject
+        ];
+
+        return $template;
+    }
+
+
+    public function echo2file_arr($handle, $arr, $space)
+    {
         $space += 2;
         fwrite($handle, "\n");
-        foreach($arr as $key=>$value)
+        foreach ($arr as $key => $value)
             if (is_array($value)) {
                 fwrite($handle, $key . "=>");
-                echo2file_arr($handle,$value,$space);
+                echo2file_arr($handle, $value, $space);
             } else {
-                fwrite($handle, str_repeat("",$space).$key."=>".$value."\n");
+                fwrite($handle, str_repeat("", $space) . $key . "=>" . $value . "\n");
             }
     }
-    
-    public function echo2file($par) {
-        $handle = fopen("errorCheckPHP.txt",'a');
-        if (is_array($par)) echo2file_arr($handle,$par,0);
-        else fwrite($handle, $par."\n");
+
+    public function echo2file($par)
+    {
+        $handle = fopen("errorCheckPHP.txt", 'a');
+        if (is_array($par))
+            echo2file_arr($handle, $par, 0);
+        else
+            fwrite($handle, $par . "\n");
     }
 
 }

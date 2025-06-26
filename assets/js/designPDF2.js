@@ -3,6 +3,28 @@ import { SelectorManager } from "./selectorManager.js";
 document.addEventListener("DOMContentLoaded", () => {
     const manager = new SelectorManager();
     const previewButton = document.getElementById("report_generator_previewPDF");
+    const downloadButton = document.getElementById("report_generator_downloadPDF");
+    const saveTemplateButton = document.getElementById("report_generator_saveTemplatePDF");
+    const PDFDesigner = {
+        getSelectorValues() {
+            const result = {};
+            for (const id in manager.selectors) {
+                const element = document.getElementById(id);
+                if (element) {
+                    result[id] = element.innerText || element.value || "";
+                }
+            }
+            return result;
+        },
+
+        // Kamu bisa tambah fungsi lain di sini, misalnya
+        getStyleString(styleObj) {
+            return Object.entries(styleObj)
+                .map(([key, value]) => `${key}: ${value}`)
+                .join('; ');
+        }
+    };
+
 
     // Registrasi default
     [
@@ -13,7 +35,6 @@ document.addEventListener("DOMContentLoaded", () => {
         "metaSubject",
         "customWidth",
         "customHeight",
-        "report_generator_downloadPDF",
         "title",
         "titleStyle",
         "headerStyle",
@@ -76,19 +97,19 @@ document.addEventListener("DOMContentLoaded", () => {
     (async () => {
         try {
             const data = await fetch("public/download2.php?action=get_data").then(res => res.json());
-            
+
             const columnCount = Object.keys(data[0]).length;
             const percentage = (100 / columnCount).toFixed(2) + "%";
-    
+
             styleGroups.columnWidths = Array.from({ length: columnCount }, () => percentage);
-    
+
             console.log("Column widths set (percent-based):", styleGroups.columnWidths);
         } catch (error) {
             console.error("Gagal mengambil data untuk columnWidths:", error);
         }
     })();
-    
-    
+
+
 
     function normalizeStyleValue(attr, value) {
         // Properti yang perlu satuan px otomatis
@@ -245,21 +266,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ✅ Fungsi ini bisa kamu panggil untuk keperluan seperti generatePreview()
-    window.getSelectorValues = () => manager.getAllValuesAsObject();
+    PDFDesigner.getSelectorValues = () => manager.getAllValuesAsObject();
 
     updateSelectorTable();
     updateHTMLPreview();
 
-    window.selectorManager = manager;
+    PDFDesigner.selectorManager = manager;
 
-    // Fungsi Download PDF
-    function downloadPDF() {
-
-        // Helper function untuk ambil value dari input/select
+    function buildPDFParams(extraParams = {}) {
+        const values = PDFDesigner.getSelectorValues();
         const getValue = selection => selection?.value || '';
     
-        // Ambil data umum
-        const title = getValue(selectorVars.title);
         const headerColor = getValue(selectorVars.headerColor);
         const paperSize = getValue(selectorVars.paperSize);
         const paperOrientation = getValue(selectorVars.paperOrientation);
@@ -268,21 +285,21 @@ document.addEventListener("DOMContentLoaded", () => {
         const metaSubject = getValue(selectorVars.metaSubject);
         const footer = getValue(selectorVars.footer);
     
-        // Serialisasi styleGroups agar bisa dikirim via GET
-        const titleStyle = encodeURIComponent(JSON.stringify(styleGroups.titleStyle || {}));
-        const headerStyle = encodeURIComponent(JSON.stringify(styleGroups.headerStyle || {}));
-        const rowStyle = encodeURIComponent(JSON.stringify(styleGroups.rowStyle || {}));
-        const tableStyle = encodeURIComponent(JSON.stringify(styleGroups.tableStyle || {}));
-        const columnWidths = encodeURIComponent(JSON.stringify(styleGroups.columnWidths));
+        // Ambil header hasil edit yang dinamakan "header_<field>"
+        const customHeaders = {};
+        for (const key in values) {
+            if (key.startsWith("header_")) {
+                const field = key.replace("header_", "");
+                customHeaders[field] = values[key];
+            }
+        }
     
-        // Bangun parameter URL
         const params = new URLSearchParams({
-            type: 'pdf',
-            title,
-            titleStyle,
-            headerStyle,
-            rowStyle,
-            tableStyle,
+            title: values.title || '',
+            titleStyle: encodeURIComponent(JSON.stringify(styleGroups.titleStyle || {})),
+            headerStyle: encodeURIComponent(JSON.stringify(styleGroups.headerStyle || {})),
+            rowStyle: encodeURIComponent(JSON.stringify(styleGroups.rowStyle || {})),
+            tableStyle: encodeURIComponent(JSON.stringify(styleGroups.tableStyle || {})),
             headerColor,
             paperSize,
             paperOrientation,
@@ -290,10 +307,12 @@ document.addEventListener("DOMContentLoaded", () => {
             metaAuthor,
             metaSubject,
             footer,
-            columnWidths,
+            columnWidths: encodeURIComponent(JSON.stringify(styleGroups.columnWidths)),
+            headers: encodeURIComponent(JSON.stringify(customHeaders)),
+            ...extraParams // Untuk menambahkan parameter spesifik seperti action
         });
     
-        // Jika ukuran kertas custom, tambahkan dimensi manual
+        // Tambahkan custom size jika ada
         if (paperSize === "custom") {
             const width = getValue(selectorVars.customWidth) || '210';
             const height = getValue(selectorVars.customHeight) || '297';
@@ -301,11 +320,14 @@ document.addEventListener("DOMContentLoaded", () => {
             params.append('customHeight', height);
         }
     
-        // Bangun URL akhir
+        return params;
+    }
+    
+    function downloadPDF() {
+        const params = buildPDFParams({ type: 'pdf' });
         const url = `/public/download2.php?${params.toString()}`;
         console.log("Download URL:", url);
     
-        // Fetch dan proses hasilnya sebagai file PDF
         fetch(url)
             .then(response => {
                 if (!response.ok) {
@@ -323,56 +345,76 @@ document.addEventListener("DOMContentLoaded", () => {
                 console.error('Download error:', error);
             });
     }
+
+    function saveTemplate() {
+        const params = buildPDFParams({ action: 'save_template_PDF' });
+        const url = `/public/download2.php?${params.toString()}`;
     
+        fetch(url)
+            .then(response => response.text())
+            .then(result => {
+                alert('Template berhasil disimpan!');
+                console.log(result);
+            })
+            .catch(error => {
+                console.error('Save template error:', error);
+            });
+    }
+
 
     async function generatePreview() {
-        const data = await fetch("public/download2.php?action=get_data").then(res => res.json());
-
+        // Build params agar selalu update
+        const params = buildPDFParams();
+        const url = `/public/download2.php?${params.toString()}&action=get_data`;
+    
+        // Fetch data langsung dari URL yang sudah include parameter terbaru
+        const data = await fetch(url).then(res => res.json());
+    
         const previewEl = document.getElementById("preview");
         if (!data || data.length === 0) {
             previewEl.innerHTML = '<p class="text-red-600">Tidak ada data dari database.</p>';
             return;
         }
-
-        const values = window.getSelectorValues(); // objek dinamis
+    
+        const values = PDFDesigner.getSelectorValues();
         const headers = Object.keys(data[0]);
-
-        // Mulai bangun HTML
+    
         let html = `
-        <html>
-            <head>
-                <meta name="title" content="${values.metaTitle || ''}">
-                <meta name="author" content="${values.metaAuthor || ''}">
-                <meta name="subject" content="${values.metaSubject || ''}">
-                <style>
-                    .generatorPDF {
-                        margin: 0;
-                        padding: 20px;
-                        box-sizing: border-box;
-                        font-family: Arial, sans-serif;
-                    }
-                    .generatorPDF-table {
-                        width: 100%;
-                        table-layout: fixed;
-                        word-wrap: break-word;
-                    }
-                    .generatorPDF-th,
-                    .generatorPDF-td {
-                        max-width: 100%;
-                        border: 1px solid #000;
-                        padding: 8px;
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="generatorPDF">
-                    <h1 id="title"style="${getStyleString(styleGroups.titleStyle)}" contentEditable=true>${values.title}</h1>
-                    <table class="generatorPDF-table" id="table_resizeable" style="${getStyleString(styleGroups.tableStyle)}" border="1">
+            <html>
+                <head>
+                    <meta name="title" content="${values.metaTitle || ''}">
+                    <meta name="author" content="${values.metaAuthor || ''}">
+                    <meta name="subject" content="${values.metaSubject || ''}">
+                    <style>
+                        .generatorPDF {
+                            margin: 0;
+                            padding: 20px;
+                            box-sizing: border-box;
+                            font-family: Arial, sans-serif;
+                        }
+                        .generatorPDF-table {
+                            width: 100%;
+                            table-layout: fixed;
+                            word-wrap: break-word;
+                        }
+                        .generatorPDF-th,
+                        .generatorPDF-td {
+                            max-width: 100%;
+                            border: 1px solid #000;
+                            padding: 8px;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="generatorPDF">
+                        <h1 id="title" style="${getStyleString(styleGroups.titleStyle)}" contentEditable=true>${values.title}</h1>
+                        <table class="generatorPDF-table" id="table_resizeable" style="${getStyleString(styleGroups.tableStyle)}" border="1">
                         <thead>
                             <tr style="${getStyleString(styleGroups.headerStyle)}">
-                                ${headers.map(header => `
-                                    <th class="generatorPDF-th" style="${getStyleString(styleGroups.headerStyle)}">${header}</th>
-                                `).join('')}
+                                ${headers.map(header => {
+                                    const customHeader = manager.selectors[`header_${header}`]?.content || header;
+                                    return `<th id="header_${header}" contentEditable="true" class="generatorPDF-th" style="${getStyleString(styleGroups.headerStyle)}">${customHeader}</th>`;
+                                }).join('')}
                             </tr>
                         </thead>
                         <tbody>
@@ -384,28 +426,49 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </tr>
                             `).join('')}
                         </tbody>
-                    </table>
-                    <div style="${getStyleString(styleGroups.footerStyle)}">
-                        ${values.footer || ''}
+                        </table>
+                        <div style="${getStyleString(styleGroups.footerStyle)}">
+                            ${values.footer || ''}
+                        </div>
                     </div>
-                </div>
-            </body>
-        </html>
+                </body>
+            </html>
         `;
-
+    
         previewEl.innerHTML = html;
-
-        document.getElementById("title").addEventListener("blur", ()=>{
-           title.value = document.getElementById("title").innerText;
+    
+        // Update title content saat di-edit
+        document.getElementById("title").addEventListener("blur", () => {
+            const text = document.getElementById("title").innerText;
+            if (manager.selectors.title) {
+                manager.selectors.title.content = text;
+            }
         });
-
-
+    
+        // Update header content saat di-edit
+        headers.forEach((headerName) => {
+            const id = `header_${headerName}`;
+            const el = document.getElementById(id);
+    
+            if (el) {
+                if (!manager.selectors[id]) {
+                    manager.selectors[id] = {};
+                }
+    
+                el.addEventListener("blur", () => {
+                    manager.selectors[id].content = el.innerText;
+                });
+            }
+        });
+    
+        // Terapkan resize dan lebar kolom
         const table = document.querySelector("#preview #table_resizeable");
         if (table) {
             makeTableResizable(table);
-            applyColumnWidths(table); 
+            applyColumnWidths(table);
         }
     }
+    
 
     function getStyleString(styleObj) {
         return Object.entries(styleObj || {})
@@ -415,7 +478,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function makeTableResizable(table) {
         const cols = table.querySelectorAll("th");
-    
+
         cols.forEach((col, index) => {
             const resizer = document.createElement("div");
             resizer.style.width = "5px";
@@ -426,41 +489,41 @@ document.addEventListener("DOMContentLoaded", () => {
             resizer.style.cursor = "col-resize";
             resizer.style.userSelect = "none";
             resizer.style.zIndex = "10";
-    
+
             col.style.position = "relative";
             col.appendChild(resizer);
-    
+
             let startX, startWidth, tableWidth;
-    
+
             resizer.addEventListener("mousedown", function (e) {
                 startX = e.pageX;
                 startWidth = col.offsetWidth;
                 tableWidth = table.offsetWidth;
-    
+
                 document.addEventListener("mousemove", onMouseMove);
                 document.addEventListener("mouseup", onMouseUp);
             });
-    
+
             function onMouseMove(e) {
                 const delta = e.pageX - startX;
                 let newWidthPx = startWidth + delta;
-    
+
                 // Minimum width 1%
                 const minWidthPx = tableWidth * 0.01;
                 if (newWidthPx < minWidthPx) newWidthPx = minWidthPx;
-    
+
                 // Konversi ke persen
                 const newWidthPercent = (newWidthPx / tableWidth) * 100;
-    
+
                 // Terapkan lebar baru dalam persen
                 col.style.width = `${newWidthPercent}%`;
                 col.setAttribute("style", `width: ${newWidthPercent}%; position: relative;`);
-    
+
                 // Simpan ke styleGroups
                 if (!styleGroups.columnWidths) styleGroups.columnWidths = [];
                 styleGroups.columnWidths[index] = `${newWidthPercent.toFixed(2)}%`;
             }
-    
+
             function onMouseUp() {
                 document.removeEventListener("mousemove", onMouseMove);
                 document.removeEventListener("mouseup", onMouseUp);
@@ -468,8 +531,6 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     }
-    
-    
 
     function applyColumnWidths(table) {
         if (!styleGroups.columnWidths) return;
@@ -481,8 +542,6 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     }
-    
-    
 
     function toggleCustomInputs() {
         const isCustom = selectorVars.paperSize.value === "custom";
@@ -490,7 +549,6 @@ document.addEventListener("DOMContentLoaded", () => {
         selectorVars.customWidth.disabled = !isCustom;
         selectorVars.customHeight.disabled = !isCustom;
     }
-
 
     function setPreviewSize() {
         const paperSize = selectorVars.paperSize.value;
@@ -539,11 +597,12 @@ document.addEventListener("DOMContentLoaded", () => {
         generatePreview();             // Tampilkan preview HTML
     });
 
-    selectorVars.report_generator_downloadPDF.addEventListener('click', () => {
-        // const values = window.getSelectorValues();
+    downloadButton.addEventListener('click', () => {
+        // const values = PDFDesigner.getSelectorValues();
         // console.log("Data dikirim ke backend:", values);
         // const params = new URLSearchParams(values).toString();
-        // window.open(`public/download2.php?type=pdf&${params}`, "_blank");
+        // PDFDesigner.open(`public/download2.php?type=pdf&${params}`, "_blank");
         downloadPDF();
     });
+    saveTemplateButton.addEventListener('click', saveTemplate);
 });

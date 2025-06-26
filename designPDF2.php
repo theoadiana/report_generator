@@ -34,6 +34,14 @@ require_once __DIR__ . '/public/download2.php';
                 class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
                 Download PDF
             </button>
+            <button id="report_generator_saveTemplatePDF" type="submit"
+                class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                Save Template PDF
+            </button>
+            <!-- <select id="templateSelector" class="border p-2 rounded">
+                <option value="">Pilih Template</option>
+            </select>
+            <button id="report_generator_loadTemplatePDF" class="ml-2 bg-blue-500 text-white p-2 rounded">Load Template</button> -->
         </div>
     </div>
 
@@ -43,10 +51,6 @@ require_once __DIR__ . '/public/download2.php';
         <div class="w-full bg-white p-4 border-b space-y-4">
             <!-- Konten Home (tools) -->
             <div class="tab-content" data-content="home">
-                <!-- <div>
-                    <label class="block text-sm font-medium">Title</label>
-                    <input type="text" id="title" class="w-full mt-1 p-2 border rounded" value="Laporan Bulanan">
-                </div> -->
                 <div>
                     <label class="block text-sm font-medium">Title Font Size</label>
                     <input type="text" class="w-full mt-1 p-2 border rounded" value="16" data-style-group="titleStyle"
