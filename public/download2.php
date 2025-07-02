@@ -18,18 +18,43 @@ $password = '';
 // Membuat instance ReportGenerator
 $reportGenerator = new ReportGenerator($dbname, $username, $password, $host);
 
-// Handle request save template
+// Handle request save template (GET)
 if (isset($_GET['action']) && $_GET['action'] === 'save_template_PDF') {
     header('Content-Type: text/plain');
 
-    $query = "SELECT * FROM pencatatan"; // Query contoh
+    $query = "SELECT * FROM pencatatan";
     $designer = buildDesignerFromRequest();
 
     // Simpan template
-    savePDFTemplate($designer->getTemplateAsArray()); // Jika ingin simpan struktur saja
-    // Jika ingin simpan dengan data: saveHTMLTemplate($designer->generateHTML($reportGenerator->getTableData($query)));
+    savePDFTemplate($designer->getTemplateAsArray());
 
     echo 'Template berhasil disimpan.';
+    exit;
+}
+
+// Handle untuk mendapatkan daftar file template
+if (isset($_GET['action']) && $_GET['action'] === 'get_template_list') {
+    header('Content-Type: application/json');
+    $templateDir = __DIR__ . '/../template_report_generator_pdf';
+    $files = array_diff(scandir($templateDir), ['.', '..']);
+    $templates = array_values(array_filter($files, fn($file) => pathinfo($file, PATHINFO_EXTENSION) === 'json'));
+    echo json_encode($templates);
+    exit;
+}
+
+// Handle untuk load template spesifik
+if (isset($_GET['action']) && $_GET['action'] === 'load_template' && isset($_GET['filename'])) {
+    header('Content-Type: application/json');
+    $templateDir = __DIR__ . '/../template_report_generator_pdf';
+    $filename = basename($_GET['filename']); // Hindari path traversal
+    $filePath = $templateDir . '/' . $filename;
+
+    if (file_exists($filePath)) {
+        $content = file_get_contents($filePath);
+        echo $content;
+    } else {
+        echo json_encode(['error' => 'Template not found']);
+    }
     exit;
 }
 
@@ -69,11 +94,14 @@ if (isset($_GET['type'])) {
 function buildDesignerFromRequest(): PDFReportDesigner {
     function getStyleFromQuery(string $key, string $default): string {
         if (!isset($_GET[$key])) return $default;
+
         $json = urldecode($_GET[$key]);
         $arr = json_decode($json, true);
+
         if (json_last_error() === JSON_ERROR_NONE && is_array($arr)) {
             return implode('; ', array_map(fn($k, $v) => "$k: $v", array_keys($arr), $arr)) . ';';
         }
+
         return $default;
     }
 
@@ -82,7 +110,6 @@ function buildDesignerFromRequest(): PDFReportDesigner {
     $headerStyle = getStyleFromQuery('headerStyle', 'font-size: 14px; font-weight: bold;');
     $rowStyle = getStyleFromQuery('rowStyle', 'font-size: 12px;');
     $tableStyle = getStyleFromQuery('tableStyle', 'width: 100%; border-collapse: collapse;');
-    $headerColor = $_GET['headerColor'] ?? '#f0f0f0';
     $paperSize = $_GET['paperSize'] ?? 'A4';
     $customWidth = isset($_GET['customWidth']) ? (float)$_GET['customWidth'] * 2.83464567 : 0.0;
     $customHeight = isset($_GET['customHeight']) ? (float)$_GET['customHeight'] * 2.83464567 : 0.0;
@@ -107,7 +134,6 @@ function buildDesignerFromRequest(): PDFReportDesigner {
     $designer->setHeaderStyle($headerStyle);
     $designer->setRowStyle($rowStyle);
     $designer->setTableStyle($tableStyle);
-    $designer->setHeaderColor($headerColor);
     $designer->setCustomHeaders($customHeaders);
 
     if ($paperSize === 'custom') {

@@ -48,13 +48,19 @@ function saveHTMLTemplate($par, $filename = "template", $customPath = null)
     return $filePath; // Jika Anda ingin mendapatkan lokasi file yang disimpan
 }
 
-function savePDFTemplate(array $template, string $filename = 'template.json') {
+function savePDFTemplate(array $template, string $prefix = 'template') {
     $folder = __DIR__ . '/../template_report_generator_pdf';
+
     if (!is_dir($folder)) {
         mkdir($folder, 0777, true);
     }
+
+    $filename = $prefix . '_' . date('Ymd_His') . '.json';
     file_put_contents($folder . '/' . $filename, json_encode($template, JSON_PRETTY_PRINT));
+
+    return $filename; // Jika ingin mengembalikan nama file ke frontend
 }
+
 
 function loadPDFTemplate(string $filename = 'template.json'): ?array {
     $path = __DIR__ . '/../template_report_generator_pdf/' . $filename;

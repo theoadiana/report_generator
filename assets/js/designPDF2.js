@@ -2,9 +2,10 @@ import { SelectorManager } from "./selectorManager.js";
 
 document.addEventListener("DOMContentLoaded", () => {
     const manager = new SelectorManager();
-    const previewButton = document.getElementById("report_generator_previewPDF");
     const downloadButton = document.getElementById("report_generator_downloadPDF");
     const saveTemplateButton = document.getElementById("report_generator_saveTemplatePDF");
+    const templateSelector = document.getElementById('report_generator_templateSelector');
+    const loadTemplateButton = document.getElementById("report_generator_loadTemplatePDF");
     const PDFDesigner = {
         getSelectorValues() {
             const result = {};
@@ -17,14 +18,32 @@ document.addEventListener("DOMContentLoaded", () => {
             return result;
         },
 
-        // Kamu bisa tambah fungsi lain di sini, misalnya
         getStyleString(styleObj) {
+            // console.log("styleObj", styleObj);
             return Object.entries(styleObj)
                 .map(([key, value]) => `${key}: ${value}`)
                 .join('; ');
+        },
+
+        updateSelectorValues(newValues = {}) {
+            for (const id in newValues) {
+                // Update manager selector
+                if (!manager.selectors[id]) {
+                    manager.selectors[id] = {};
+                }
+                manager.selectors[id].value = newValues[id];
+
+                const element = document.getElementById(id);
+                if (element) {
+                    if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA' || element.tagName === 'SELECT') {
+                        element.value = newValues[id]; // Update form input jika ada
+                    } else {
+                        element.innerText = newValues[id]; // Update contentEditable atau text element
+                    }
+                }
+            }
         }
     };
-
 
     // Registrasi default
     [
@@ -38,7 +57,6 @@ document.addEventListener("DOMContentLoaded", () => {
         "title",
         "titleStyle",
         "headerStyle",
-        "headerColor",
         "rowStyle",
         "rowColor",
         "footer",
@@ -103,7 +121,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             styleGroups.columnWidths = Array.from({ length: columnCount }, () => percentage);
 
-            console.log("Column widths set (percent-based):", styleGroups.columnWidths);
+            // console.log("Column widths set (percent-based):", styleGroups.columnWidths);
         } catch (error) {
             console.error("Gagal mengambil data untuk columnWidths:", error);
         }
@@ -276,15 +294,13 @@ document.addEventListener("DOMContentLoaded", () => {
     function buildPDFParams(extraParams = {}) {
         const values = PDFDesigner.getSelectorValues();
         const getValue = selection => selection?.value || '';
-    
-        const headerColor = getValue(selectorVars.headerColor);
         const paperSize = getValue(selectorVars.paperSize);
         const paperOrientation = getValue(selectorVars.paperOrientation);
         const metaTitle = getValue(selectorVars.metaTitle);
         const metaAuthor = getValue(selectorVars.metaAuthor);
         const metaSubject = getValue(selectorVars.metaSubject);
         const footer = getValue(selectorVars.footer);
-    
+
         // Ambil header hasil edit yang dinamakan "header_<field>"
         const customHeaders = {};
         for (const key in values) {
@@ -293,14 +309,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 customHeaders[field] = values[key];
             }
         }
-    
+
+        console.log("buildPDF title style", encodeURIComponent(JSON.stringify(styleGroups.titleStyle || {})));
+
         const params = new URLSearchParams({
             title: values.title || '',
             titleStyle: encodeURIComponent(JSON.stringify(styleGroups.titleStyle || {})),
             headerStyle: encodeURIComponent(JSON.stringify(styleGroups.headerStyle || {})),
             rowStyle: encodeURIComponent(JSON.stringify(styleGroups.rowStyle || {})),
             tableStyle: encodeURIComponent(JSON.stringify(styleGroups.tableStyle || {})),
-            headerColor,
             paperSize,
             paperOrientation,
             metaTitle,
@@ -311,7 +328,7 @@ document.addEventListener("DOMContentLoaded", () => {
             headers: encodeURIComponent(JSON.stringify(customHeaders)),
             ...extraParams // Untuk menambahkan parameter spesifik seperti action
         });
-    
+
         // Tambahkan custom size jika ada
         if (paperSize === "custom") {
             const width = getValue(selectorVars.customWidth) || '210';
@@ -319,15 +336,15 @@ document.addEventListener("DOMContentLoaded", () => {
             params.append('customWidth', width);
             params.append('customHeight', height);
         }
-    
+
         return params;
     }
-    
+
     function downloadPDF() {
         const params = buildPDFParams({ type: 'pdf' });
         const url = `/public/download2.php?${params.toString()}`;
         console.log("Download URL:", url);
-    
+
         fetch(url)
             .then(response => {
                 if (!response.ok) {
@@ -349,7 +366,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function saveTemplate() {
         const params = buildPDFParams({ action: 'save_template_PDF' });
         const url = `/public/download2.php?${params.toString()}`;
-    
+
         fetch(url)
             .then(response => response.text())
             .then(result => {
@@ -361,24 +378,114 @@ document.addEventListener("DOMContentLoaded", () => {
             });
     }
 
+    function applyStyleGroupsToForm() {
+        document.querySelectorAll('[data-style-group]').forEach(input => {
+            const group = input.dataset.styleGroup;
+            const attr = input.dataset.styleAttr;
+    
+            if (styleGroups[group] && styleGroups[group][attr] !== undefined) {
+                input.value = styleGroups[group][attr];
+            }
+        });
+    }    
+
+    async function loadTemplate(filename) {
+        try {
+            const response = await fetch(`/public/download2.php?action=load_template&filename=${encodeURIComponent(filename)}`);
+            if (!response.ok) throw new Error('Gagal memuat template');
+
+            const template = await response.json();
+            console.log("template", template);
+            if (!template) throw new Error('Template kosong');
+
+            // Set selector values
+            if (PDFDesigner && PDFDesigner.updateSelectorValues) {
+                PDFDesigner.updateSelectorValues({
+                    title: template.title || '',
+                    paperSize: template.paperSize || 'A4',
+                    paperOrientation: template.paperOrientation || 'portrait',
+                    metaTitle: template.metaTitle || '',
+                    metaAuthor: template.metaAuthor || '',
+                    metaSubject: template.metaSubject || '',
+                    footer: template.footer || ''
+                });
+            }
+
+            // Update custom headers
+            for (const key in template.customHeaders) {
+                if (manager.selectors[`header_${key}`]) {
+                    manager.selectors[`header_${key}`].content = template.customHeaders[key];
+                } else {
+                    manager.selectors[`header_${key}`] = { content: template.customHeaders[key] };
+                }
+            }
+
+            // Update styleGroups
+            styleGroups.titleStyle = template.titleStyle || {};
+            styleGroups.headerStyle = template.headerStyle || {};
+            styleGroups.rowStyle = template.rowStyle || {};
+            styleGroups.tableStyle = template.tableStyle || {};
+            styleGroups.columnWidths = template.columnWidths || [];
+            console.log("styleGroups.titleStyle", styleGroups.titleStyle);
+            // Apply style ke form input jika pakai input form style
+            if (typeof applyStyleGroupsToForm === 'function') {
+                applyStyleGroupsToForm();
+            }
+            console.log("sssss",styleGroups);
+            // Preview otomatis
+            generatePreview();
+
+            console.log('Template berhasil dimuat');
+        } catch (error) {
+            console.error('Load Template Error:', error);
+            alert('Gagal memuat template. Silakan coba lagi.');
+        }
+    }
+
+    async function fetchTemplateList() {
+        try {
+            const response = await fetch('/public/download2.php?action=get_template_list');
+            if (!response.ok) throw new Error('Gagal mengambil daftar template');
+
+            const templates = await response.json();
+
+            // Bersihkan dropdown dan tambahkan opsi default
+            templateSelector.innerHTML = '<option value="">Pilih Template</option>';
+
+            // Masukkan semua template ke dropdown
+            templates.forEach(template => {
+                const option = document.createElement('option');
+                option.value = template;
+                option.textContent = template.replace('.json', '');
+                templateSelector.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Fetch Template List Error:', error);
+            alert('Gagal mengambil daftar template.');
+        }
+    }
+
+    fetchTemplateList();
 
     async function generatePreview() {
         // Build params agar selalu update
         const params = buildPDFParams();
         const url = `/public/download2.php?${params.toString()}&action=get_data`;
-    
+        
         // Fetch data langsung dari URL yang sudah include parameter terbaru
         const data = await fetch(url).then(res => res.json());
-    
+
         const previewEl = document.getElementById("preview");
         if (!data || data.length === 0) {
             previewEl.innerHTML = '<p class="text-red-600">Tidak ada data dari database.</p>';
             return;
         }
-    
+
         const values = PDFDesigner.getSelectorValues();
         const headers = Object.keys(data[0]);
-    
+
+        console.log("params", styleGroups.titleStyle);
+
         let html = `
             <html>
                 <head>
@@ -407,36 +514,38 @@ document.addEventListener("DOMContentLoaded", () => {
                 </head>
                 <body>
                     <div class="generatorPDF">
-                        <h1 id="title" style="${getStyleString(styleGroups.titleStyle)}" contentEditable=true>${values.title}</h1>
-                        <table class="generatorPDF-table" id="table_resizeable" style="${getStyleString(styleGroups.tableStyle)}" border="1">
+                        <h1 id="title" style="${PDFDesigner.getStyleString(styleGroups.titleStyle)}" contentEditable=true>${values.title}</h1>
+                        <table class="generatorPDF-table" id="table_resizeable" style="${PDFDesigner.getStyleString(styleGroups.tableStyle)}" border="1">
                         <thead>
-                            <tr style="${getStyleString(styleGroups.headerStyle)}">
+                            <tr style="${PDFDesigner.getStyleString(styleGroups.headerStyle)}">
                                 ${headers.map(header => {
-                                    const customHeader = manager.selectors[`header_${header}`]?.content || header;
-                                    return `<th id="header_${header}" contentEditable="true" class="generatorPDF-th" style="${getStyleString(styleGroups.headerStyle)}">${customHeader}</th>`;
-                                }).join('')}
+            const customHeader = manager.selectors[`header_${header}`]?.content || header;
+            return `<th id="header_${header}" contentEditable="true" class="generatorPDF-th" style="${PDFDesigner.getStyleString(styleGroups.headerStyle)}">${customHeader}</th>`;
+        }).join('')}
                             </tr>
                         </thead>
                         <tbody>
                             ${data.map(row => `
                                 <tr>
                                     ${headers.map(header => `
-                                        <td class="generatorPDF-td" style="${getStyleString(styleGroups.rowStyle)}">${row[header]}</td>
+                                        <td class="generatorPDF-td" style="${PDFDesigner.getStyleString(styleGroups.rowStyle)}">${row[header]}</td>
                                     `).join('')}
                                 </tr>
                             `).join('')}
                         </tbody>
                         </table>
-                        <div style="${getStyleString(styleGroups.footerStyle)}">
+                        <div style="${PDFDesigner.getStyleString(styleGroups.footerStyle)}">
                             ${values.footer || ''}
                         </div>
                     </div>
                 </body>
             </html>
         `;
-    
+
         previewEl.innerHTML = html;
-    
+
+        console.log("values.titleStyle", styleGroups.titleStyle);
+
         // Update title content saat di-edit
         document.getElementById("title").addEventListener("blur", () => {
             const text = document.getElementById("title").innerText;
@@ -444,23 +553,23 @@ document.addEventListener("DOMContentLoaded", () => {
                 manager.selectors.title.content = text;
             }
         });
-    
+
         // Update header content saat di-edit
         headers.forEach((headerName) => {
             const id = `header_${headerName}`;
             const el = document.getElementById(id);
-    
+
             if (el) {
                 if (!manager.selectors[id]) {
                     manager.selectors[id] = {};
                 }
-    
+
                 el.addEventListener("blur", () => {
                     manager.selectors[id].content = el.innerText;
                 });
             }
         });
-    
+
         // Terapkan resize dan lebar kolom
         const table = document.querySelector("#preview #table_resizeable");
         if (table) {
@@ -468,13 +577,13 @@ document.addEventListener("DOMContentLoaded", () => {
             applyColumnWidths(table);
         }
     }
-    
 
-    function getStyleString(styleObj) {
-        return Object.entries(styleObj || {})
-            .map(([prop, value]) => `${prop}: ${value}`)
-            .join('; ');
-    }
+
+    // function getStyleString(styleObj) {
+    //     return Object.entries(styleObj || {})
+    //         .map(([prop, value]) => `${prop}: ${value}`)
+    //         .join('; ');
+    // }
 
     function makeTableResizable(table) {
         const cols = table.querySelectorAll("th");
@@ -592,10 +701,19 @@ document.addEventListener("DOMContentLoaded", () => {
     toggleCustomInputs();
     selectorVars.paperSize.addEventListener("change", setPreviewSize);
     selectorVars.paperOrientation.addEventListener("change", setPreviewSize);
-    previewButton.addEventListener("click", () => {
-        updateStyleGroupsFromInputs(); // Ambil semua input dan update styleGroups
-        generatePreview();             // Tampilkan preview HTML
+    document.querySelectorAll('[data-style-group]').forEach(input => {
+        input.addEventListener('input', () => {
+            updateStyleGroupsFromInputs();
+            generatePreview();
+        });
+        input.addEventListener('change', () => {
+            updateStyleGroupsFromInputs();
+            generatePreview();
+        });
     });
+    updateStyleGroupsFromInputs();
+    generatePreview();
+    
 
     downloadButton.addEventListener('click', () => {
         // const values = PDFDesigner.getSelectorValues();
@@ -604,5 +722,22 @@ document.addEventListener("DOMContentLoaded", () => {
         // PDFDesigner.open(`public/download2.php?type=pdf&${params}`, "_blank");
         downloadPDF();
     });
+
+    loadTemplateButton.addEventListener('click', () => {
+        const selector = templateSelector;
+        const selectedValue = selector.value;
+
+        if (!selectedValue) {
+            alert('Silakan pilih template terlebih dahulu.');
+            return;
+        }
+
+        console.log('Template yang dipilih:', selectedValue);
+
+        // Load template
+        loadTemplate(selectedValue); // Load Template
+    });
+
+
     saveTemplateButton.addEventListener('click', saveTemplate);
 });

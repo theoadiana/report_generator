@@ -7,7 +7,6 @@ class PDFReportDesigner
     private string $headerStyle = 'font-size: 16px; font-weight: bold; text-align: left; background-color: #f0f0f0;';
     private string $rowStyle = 'font-size: 12px;';
     private string $tableStyle = 'width: 100%; border-collapse: collapse;';
-    private string $headerColor = '#f0f0f0';
     private string $fontStyle = 'font-family: Arial, sans-serif;';
     private string|array $paperSize = 'A4';
     private string $paperOrientation = 'portrait';
@@ -45,11 +44,6 @@ class PDFReportDesigner
     public function setTableStyle(string $tableStyle): void
     {
         $this->tableStyle = $tableStyle;
-    }
-
-    public function setHeaderColor(string $headerColor): void
-    {
-        $this->headerColor = $headerColor;
     }
 
     public function setFontStyle(string $fontStyle): void
@@ -225,13 +219,12 @@ class PDFReportDesigner
 
     public function getTemplateAsArray(): array
     {
-        $template = [
+        return [
             'title' => $this->title,
-            'titleStyle' => $this->titleStyle,
-            'headerStyle' => $this->headerStyle,
-            'rowStyle' => $this->rowStyle,
-            'tableStyle' => $this->tableStyle,
-            'headerColor' => $this->headerColor,
+            'titleStyle' => $this->parseStyleStringToArray($this->titleStyle),
+            'headerStyle' => $this->parseStyleStringToArray($this->headerStyle),
+            'rowStyle' => $this->parseStyleStringToArray($this->rowStyle),
+            'tableStyle' => $this->parseStyleStringToArray($this->tableStyle),
             'fontStyle' => $this->fontStyle,
             'paperSize' => $this->paperSize,
             'paperOrientation' => $this->paperOrientation,
@@ -242,9 +235,21 @@ class PDFReportDesigner
             'metaAuthor' => $this->metaAuthor,
             'metaSubject' => $this->metaSubject
         ];
-
-        return $template;
     }
+
+    private function parseStyleStringToArray(string $style): array
+    {
+        $styleArray = [];
+        $rules = explode(';', $style);
+        foreach ($rules as $rule) {
+            if (strpos($rule, ':') !== false) {
+                list($key, $value) = explode(':', $rule, 2);
+                $styleArray[trim($key)] = trim($value);
+            }
+        }
+        return $styleArray;
+    }
+
 
 
     public function echo2file_arr($handle, $arr, $space)
