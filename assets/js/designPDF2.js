@@ -6,6 +6,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const saveTemplateButton = document.getElementById("report_generator_saveTemplatePDF");
     const templateSelector = document.getElementById('report_generator_templateSelector');
     const loadTemplateButton = document.getElementById("report_generator_loadTemplatePDF");
+    const queryExecuteButton = document.getElementById("report_generator_queryExecute");
+    let cachedData = [];
     const PDFDesigner = {
         getSelectorValues() {
             const result = {};
@@ -44,6 +46,43 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
     };
+
+    queryExecuteButton.addEventListener('click', () => {
+        const query = document.getElementById('manualQueryInput').value;
+    
+        if (query.trim() === '') {
+            alert('Query tidak boleh kosong.');
+            return;
+        }
+    
+        console.log('Data yang dikirim ke backend:', { query: query });
+    
+        fetch('public/download2.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: query })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('HTTP status ' + response.status);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                updateStyleGroupsFromInputs();
+                generatePreview(); // Fetch data baru
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Terjadi kesalahan saat mengirim query: ' + error.message);
+        });
+    });
+    
+    
 
     // Registrasi default
     [
@@ -175,6 +214,92 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    function renderPreview(data) {
+        const previewEl = document.getElementById("preview");
+    
+        if (!data || data.length === 0) {
+            previewEl.innerHTML = '<p class="text-red-600">Tidak ada data dari database.</p>';
+            return;
+        }
+
+        setPreviewSize();
+    
+        const values = PDFDesigner.getSelectorValues();
+        const headers = Object.keys(data[0]);
+    
+        let html = `
+            <html>
+                <head>
+                    <meta name="title" content="${values.metaTitle || ''}">
+                    <meta name="author" content="${values.metaAuthor || ''}">
+                    <meta name="subject" content="${values.metaSubject || ''}">
+                    <style>
+                        .generatorPDF { margin: 0; padding: 20px; box-sizing: border-box; font-family: Arial, sans-serif; }
+                        .generatorPDF-table { width: 100%; table-layout: fixed; word-wrap: break-word; }
+                        .generatorPDF-th, .generatorPDF-td { max-width: 100%; border: 1px solid #000; padding: 8px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="generatorPDF">
+                        <h1 id="title" style="${PDFDesigner.getStyleString(styleGroups.titleStyle)}" contentEditable=true>${values.title}</h1>
+                        <table class="generatorPDF-table" id="table_resizeable" style="${PDFDesigner.getStyleString(styleGroups.tableStyle)}" border="1">
+                        <thead>
+                            <tr style="${PDFDesigner.getStyleString(styleGroups.headerStyle)}">
+                                ${headers.map(header => {
+                                    const customHeader = manager.selectors[`header_${header}`]?.content || header;
+                                    return `<th id="header_${header}" contentEditable="true" class="generatorPDF-th" style="${PDFDesigner.getStyleString(styleGroups.headerStyle)}">${customHeader}</th>`;
+                                }).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.map(row => `
+                                <tr>
+                                    ${headers.map(header => `
+                                        <td class="generatorPDF-td" style="${PDFDesigner.getStyleString(styleGroups.rowStyle)}">${row[header]}</td>
+                                    `).join('')}
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                        </table>
+                        <div style="${PDFDesigner.getStyleString(styleGroups.footerStyle)}">
+                            ${values.footer || ''}
+                        </div>
+                    </div>
+                </body>
+            </html>
+        `;
+    
+        previewEl.innerHTML = html;
+    
+        document.getElementById("title").addEventListener("blur", () => {
+            const text = document.getElementById("title").innerText;
+            if (manager.selectors.title) {
+                manager.selectors.title.content = text;
+            }
+        });
+    
+        headers.forEach((headerName) => {
+            const id = `header_${headerName}`;
+            const el = document.getElementById(id);
+    
+            if (el) {
+                if (!manager.selectors[id]) {
+                    manager.selectors[id] = {};
+                }
+    
+                el.addEventListener("blur", () => {
+                    manager.selectors[id].content = el.innerText;
+                });
+            }
+        });
+    
+        const table = document.querySelector("#preview #table_resizeable");
+        if (table) {
+            makeTableResizable(table);
+            applyColumnWidths(table);
+        }
+    }
+    
 
     // Tombol tambah selector
     const addSelectorBtn = document.getElementById("addSelectorBtn");
@@ -468,116 +593,21 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchTemplateList();
 
     async function generatePreview() {
-        // Build params agar selalu update
         const params = buildPDFParams();
         const url = `/public/download2.php?${params.toString()}&action=get_data`;
-        
-        // Fetch data langsung dari URL yang sudah include parameter terbaru
-        const data = await fetch(url).then(res => res.json());
-
-        const previewEl = document.getElementById("preview");
-        if (!data || data.length === 0) {
-            previewEl.innerHTML = '<p class="text-red-600">Tidak ada data dari database.</p>';
+    
+        const response = await fetch(url);
+        const result = await response.json();
+    
+        if (!result.success || result.data.length === 0) {
+            document.getElementById("preview").innerHTML = '<p class="text-red-600">Tidak ada data dari database.</p>';
             return;
         }
-
-        const values = PDFDesigner.getSelectorValues();
-        const headers = Object.keys(data[0]);
-
-        console.log("params", styleGroups.titleStyle);
-
-        let html = `
-            <html>
-                <head>
-                    <meta name="title" content="${values.metaTitle || ''}">
-                    <meta name="author" content="${values.metaAuthor || ''}">
-                    <meta name="subject" content="${values.metaSubject || ''}">
-                    <style>
-                        .generatorPDF {
-                            margin: 0;
-                            padding: 20px;
-                            box-sizing: border-box;
-                            font-family: Arial, sans-serif;
-                        }
-                        .generatorPDF-table {
-                            width: 100%;
-                            table-layout: fixed;
-                            word-wrap: break-word;
-                        }
-                        .generatorPDF-th,
-                        .generatorPDF-td {
-                            max-width: 100%;
-                            border: 1px solid #000;
-                            padding: 8px;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="generatorPDF">
-                        <h1 id="title" style="${PDFDesigner.getStyleString(styleGroups.titleStyle)}" contentEditable=true>${values.title}</h1>
-                        <table class="generatorPDF-table" id="table_resizeable" style="${PDFDesigner.getStyleString(styleGroups.tableStyle)}" border="1">
-                        <thead>
-                            <tr style="${PDFDesigner.getStyleString(styleGroups.headerStyle)}">
-                                ${headers.map(header => {
-            const customHeader = manager.selectors[`header_${header}`]?.content || header;
-            return `<th id="header_${header}" contentEditable="true" class="generatorPDF-th" style="${PDFDesigner.getStyleString(styleGroups.headerStyle)}">${customHeader}</th>`;
-        }).join('')}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${data.map(row => `
-                                <tr>
-                                    ${headers.map(header => `
-                                        <td class="generatorPDF-td" style="${PDFDesigner.getStyleString(styleGroups.rowStyle)}">${row[header]}</td>
-                                    `).join('')}
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                        </table>
-                        <div style="${PDFDesigner.getStyleString(styleGroups.footerStyle)}">
-                            ${values.footer || ''}
-                        </div>
-                    </div>
-                </body>
-            </html>
-        `;
-
-        previewEl.innerHTML = html;
-
-        console.log("values.titleStyle", styleGroups.titleStyle);
-
-        // Update title content saat di-edit
-        document.getElementById("title").addEventListener("blur", () => {
-            const text = document.getElementById("title").innerText;
-            if (manager.selectors.title) {
-                manager.selectors.title.content = text;
-            }
-        });
-
-        // Update header content saat di-edit
-        headers.forEach((headerName) => {
-            const id = `header_${headerName}`;
-            const el = document.getElementById(id);
-
-            if (el) {
-                if (!manager.selectors[id]) {
-                    manager.selectors[id] = {};
-                }
-
-                el.addEventListener("blur", () => {
-                    manager.selectors[id].content = el.innerText;
-                });
-            }
-        });
-
-        // Terapkan resize dan lebar kolom
-        const table = document.querySelector("#preview #table_resizeable");
-        if (table) {
-            makeTableResizable(table);
-            applyColumnWidths(table);
-        }
+    
+        cachedData = result.data;
+        renderPreview(cachedData);
     }
-
+    
 
     // function getStyleString(styleObj) {
     //     return Object.entries(styleObj || {})
@@ -704,13 +734,14 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll('[data-style-group]').forEach(input => {
         input.addEventListener('input', () => {
             updateStyleGroupsFromInputs();
-            generatePreview();
+            renderPreview(cachedData); // Gunakan data yang sudah diambil
         });
         input.addEventListener('change', () => {
             updateStyleGroupsFromInputs();
-            generatePreview();
+            renderPreview(cachedData);
         });
     });
+    
     updateStyleGroupsFromInputs();
     generatePreview();
     

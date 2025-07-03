@@ -1,35 +1,39 @@
 {
-    "title": "2300",
+    "query": "SELECT * FROM barang",
+    "title": "",
     "titleStyle": {
         "font-size": "16px",
         "font-weight": "bold",
-        "color": "#ff0000",
-        "text-align": "left",
+        "color": "#000000",
+        "text-align": "center",
         "background-color": "#ffffff",
         "border": "none",
         "padding": "10px",
         "margin": "10px"
     },
     "headerStyle": {
-        "font-size": "20px",
+        "font-size": "16px",
         "font-weight": "700",
-        "color": "#ff0000",
-        "text-align": "right",
-        "background-color": "#1100ff",
+        "color": "#000000",
+        "text-align": "left",
+        "background-color": "#ffffff",
         "border": "1px solid #000000",
-        "padding": "8px"
+        "padding": "8px",
+        "border-width": "1px",
+        "border-style": "solid",
+        "border-color": "#000000"
     },
     "rowStyle": {
         "font-size": "16px",
-        "font-weight": "400",
-        "color": "#009eb3",
+        "font-weight": "700",
+        "color": "#000000",
         "text-align": "left",
-        "background-color": "#f9f9f9",
+        "background-color": "#ffffff",
         "border": "1px solid #000000",
         "padding": "6px",
-        "border-width": "4px",
-        "border-style": "double",
-        "border-color": "#00ff7b"
+        "border-width": "1px",
+        "border-style": "solid",
+        "border-color": "#000000"
     },
     "tableStyle": {
         "width": "100%",
@@ -41,27 +45,10 @@
     "paperSize": "A4",
     "paperOrientation": "portrait",
     "footer": "",
-    "columnWidths": [
-        "10.00%",
-        "10.00%",
-        "10.00%",
-        "10.00%",
-        "10.00%",
-        "10.00%",
-        "10.00%",
-        "10.00%",
-        "10.00%",
-        "10.00%"
-    ],
+    "columnWidths": [],
     "customHeaders": {
-        "id": "id Nama",
-        "tanggal": "tanggal Berapa",
         "nomor_barang": "nomor_barang",
-        "banyak": "banyak",
-        "total_stok": "total_stok",
-        "nama_pengambil": "nama_pengambil",
-        "nomor_mesin": "nomor_mesin",
-        "jenis_transaksi": "jenis_transaksi",
+        "nama_barang": "nama_barang",
         "created_at": "created_at",
         "updated_at": "updated_at"
     },

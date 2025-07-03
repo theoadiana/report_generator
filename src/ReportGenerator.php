@@ -6,15 +6,30 @@ require_once 'ExportHandlerCSV.php';
 require_once 'ExportHandlerExcel.php';
 require_once 'ExportHandlerPDF.php';
 
-class ReportGenerator extends DatabaseConnection {
+class ReportGenerator extends DatabaseConnection
+{
     private ?PDFReportDesigner $designer;
+    private string $query = '';
+
     public function __construct(string $dbname, string $username = 'root', string $password = '', string $host = 'localhost', ?PDFReportDesigner $designer = null)
     {
         parent::__construct($host, $dbname, $username, $password);
         $this->designer = $designer ?? new PDFReportDesigner();
     }
 
-    public function getTableData(string $query): array
+    // ✅ Setter untuk query
+    public function setQuery(string $query): void
+    {
+        $this->query = $query;
+    }
+
+    // ✅ Getter untuk query
+    public function getQuery(): string
+    {
+        return $this->query;
+    }
+
+    public function getTableData(?string $query = null): array
     {
         $pdo = $this->connect();
 
@@ -22,8 +37,15 @@ class ReportGenerator extends DatabaseConnection {
             return [];
         }
 
+        $queryToExecute = $query ?? $this->query;
+
+        if (empty($queryToExecute)) {
+            echo "Query kosong.";
+            return [];
+        }
+
         try {
-            $statement = $pdo->prepare($query);
+            $statement = $pdo->prepare($queryToExecute);
             $statement->execute();
             return $statement->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
@@ -36,8 +58,13 @@ class ReportGenerator extends DatabaseConnection {
     {
         $this->designer = $designer;
     }
+    public function getDesignerPDF(): ?PDFReportDesigner
+    {
+        return $this->designer;
+    }
 
-    public function export(string $query, string $type, string $filename): void
+
+    public function export(?string $query = null, string $type, string $filename): void
     {
         $data = $this->getTableData($query);
 
@@ -46,7 +73,7 @@ class ReportGenerator extends DatabaseConnection {
             return;
         }
 
-        $exportHandler = match($type) {
+        $exportHandler = match ($type) {
             'csv' => new ExportHandlerCSV($data),
             'xlsx' => new ExportHandlerExcel($data),
             'pdf' => new ExportHandlerPDF($data, $this->designer),

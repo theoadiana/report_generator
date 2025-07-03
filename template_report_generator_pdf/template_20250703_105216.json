@@ -1,0 +1,79 @@
+{
+    "query": "SELECT * FROM produksi",
+    "title": "BABI",
+    "titleStyle": {
+        "font-size": "16px",
+        "font-weight": "bold",
+        "color": "#000000",
+        "text-align": "center",
+        "background-color": "#ffffff",
+        "border": "none",
+        "padding": "10px",
+        "margin": "10px"
+    },
+    "headerStyle": {
+        "font-size": "px",
+        "font-weight": "700",
+        "color": "#000000",
+        "text-align": "left",
+        "background-color": "#ffffff",
+        "border": "1px solid #000000",
+        "padding": "8px",
+        "border-width": "px",
+        "border-style": "solid",
+        "border-color": "#000000"
+    },
+    "rowStyle": {
+        "font-size": "px",
+        "font-weight": "700",
+        "color": "#000000",
+        "text-align": "left",
+        "background-color": "#ffffff",
+        "border": "1px solid #000000",
+        "padding": "6px",
+        "border-width": "px",
+        "border-style": "solid",
+        "border-color": "#000000"
+    },
+    "tableStyle": {
+        "width": "100%",
+        "border-collapse": "collapse",
+        "margin-top": "20px",
+        "margin-bottom": "20px"
+    },
+    "fontStyle": "font-family: Arial, sans-serif;",
+    "paperSize": [
+        0,
+        0,
+        283.464567,
+        850.393701
+    ],
+    "paperOrientation": "portrait",
+    "footer": "",
+    "columnWidths": [],
+    "customHeaders": {
+        "id_produksi": "ASU",
+        "nomor_mesin": "nomor_mesin",
+        "id_konstruksi": "id_konstruksi",
+        "tanggal": "tanggal",
+        "hasil_produksi": "hasil_produksi",
+        "sesi": "sesi",
+        "grup": "grup",
+        "waktu": "waktu",
+        "layer": "layer",
+        "counter": "counter",
+        "efisiensi": "efisiensi",
+        "created_at": "created_at",
+        "updated_at": "updated_at",
+        "nomor_barang": "",
+        "nama_barang": "",
+        "id": "",
+        "banyak": "",
+        "total_stok": "",
+        "nama_pengambil": "",
+        "jenis_transaksi": ""
+    },
+    "metaTitle": "",
+    "metaAuthor": "",
+    "metaSubject": ""
+}

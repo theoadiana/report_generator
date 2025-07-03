@@ -26,6 +26,8 @@ require_once __DIR__ . '/public/download2.php';
                 data-tab="rowStyle">Row Style</button>
             <button class="tab-button text-gray-600 hover:text-black py-2 px-3 border-b-2 border-transparent"
                 data-tab="tools">Tools</button>
+            <button class="tab-button text-gray-600 hover:text-black py-2 px-3 border-b-2 border-transparent"
+                data-tab="query">Query</button>
             <button id="report_generator_downloadPDF" type="submit"
                 class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
                 Download PDF
@@ -244,6 +246,20 @@ require_once __DIR__ . '/public/download2.php';
                         <input type="color" class="w-full mt-1 p-2 border rounded" value="#000000"
                             data-style-group="rowStyle" data-style-attr="border-color">
                     </div>
+                </div>
+
+                <!-- Tab Row Style -->
+                <div class="tab-content hidden" data-content="query">
+                    <div class="col-span-2">
+                        <h4 class="text-sm font-semibold mb-1">Query Manual</h4>
+                        <textarea id="manualQueryInput" class="w-full p-2 border rounded text-sm" rows="4"
+                            placeholder="Tulis query di sini..."></textarea>
+                        <button id="report_generator_queryExecute"
+                            class="mt-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                            Jalankan Query
+                        </button>
+                    </div>
+
                 </div>
 
                 <div class="tab-content hidden" data-content="tools">

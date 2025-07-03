@@ -13,6 +13,8 @@ class PDFReportDesigner
     private string $footer = '';
     private array $columnWidths = [];
     private array $customHeaders = [];
+    private string $query = '';
+
 
 
     // Metadata
@@ -83,6 +85,10 @@ class PDFReportDesigner
         $this->customHeaders = $headers;
     }
 
+    public function setQuery(string $query): void
+{
+    $this->query = $query;
+}
 
     public function getTitleStyle(): string
     {
@@ -125,6 +131,10 @@ class PDFReportDesigner
     }
 
 
+    public function getQuery(): string
+    {
+        return $this->query;
+    }
     public function generateHTML(array $data): string
     {
         if (empty($data)) {
@@ -212,14 +222,13 @@ class PDFReportDesigner
     </script>';
 
         $html .= '</body></html>';
-
-        echo2file($html); // Logging ke file jika diperlukan
         return $html;
     }
 
     public function getTemplateAsArray(): array
     {
         return [
+            'query' => $this->query,
             'title' => $this->title,
             'titleStyle' => $this->parseStyleStringToArray($this->titleStyle),
             'headerStyle' => $this->parseStyleStringToArray($this->headerStyle),

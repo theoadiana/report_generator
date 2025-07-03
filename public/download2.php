@@ -1,4 +1,6 @@
 <?php
+session_start(); // HARUS DI BARIS PALING ATAS
+
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../src/DatabaseConnection.php';
 require_once __DIR__ . '/../src/ExportHandler.php';
@@ -15,16 +17,93 @@ $dbname = 'stok_gudang_djohartex';
 $username = 'root';
 $password = '';
 
-// Membuat instance ReportGenerator
+// Buat instance ReportGenerator
 $reportGenerator = new ReportGenerator($dbname, $username, $password, $host);
+
+// ✅ Ambil query dari session jika ada
+if (isset($_SESSION['report_query'])) {
+    $reportGenerator->setQuery($_SESSION['report_query']);
+    if ($reportGenerator->getDesignerPDF()) {
+        $reportGenerator->getDesignerPDF()->setQuery($_SESSION['report_query']); // ✅ Simpan ke designer
+    }
+}
+
+
+// ✅ Handle POST
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    header('Content-Type: application/json');
+
+    $input = json_decode(file_get_contents('php://input'), true);
+    $query = $input['query'] ?? '';
+
+    if (empty($query)) {
+        echo json_encode(['success' => false, 'error' => 'Query kosong.']);
+        exit;
+    }
+
+    try {
+        $reportGenerator->setQuery($query);
+        $_SESSION['report_query'] = $query; // ✅ Simpan ke session
+
+        $data = $reportGenerator->getTableData();
+        if (empty($data)) {
+            echo json_encode(['success' => true, 'columns' => [], 'rows' => []]);
+            exit;
+        }
+
+        $columns = array_keys($data[0]);
+        $rows = $data;
+
+        echo json_encode([
+            'success' => true,
+            'columns' => $columns,
+            'rows' => $rows
+        ]);
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    }
+    exit;
+}
+
+// ✅ GET tetap bisa akses query yang sudah disimpan
+if (isset($_GET['action']) && $_GET['action'] === 'get_data') {
+    header('Content-Type: application/json');
+    try {
+        echo json_encode(['success' => true, 'data' => $reportGenerator->getTableData()]);
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    }
+    exit;
+}
+
+// Proses Export File
+if (isset($_GET['type'])) {
+    $type = $_GET['type'] ?? '';
+    $filename = 'laporan_' . date('Y-m-d') . '.' . $type;
+
+    $query = $_GET['query'] ?? '';
+    if (!empty($query)) {
+        $reportGenerator->setQuery($query);
+        if ($reportGenerator->getDesignerPDF()) {
+            $reportGenerator->getDesignerPDF()->setQuery($query);
+        }
+    }
+    
+
+    if ($type === 'pdf') {
+        $designer = buildDesignerFromRequest();
+        $reportGenerator->setDesignerPDF($designer);
+    }
+
+    $reportGenerator->export(null, $type, $filename); // ✅ Query otomatis diambil dari object
+}
 
 // Handle request save template (GET)
 if (isset($_GET['action']) && $_GET['action'] === 'save_template_PDF') {
     header('Content-Type: text/plain');
 
-    $query = "SELECT * FROM pencatatan";
     $designer = buildDesignerFromRequest();
-
+    $designer->setQuery($reportGenerator->getQuery());
     // Simpan template
     savePDFTemplate($designer->getTemplateAsArray());
 
@@ -51,43 +130,20 @@ if (isset($_GET['action']) && $_GET['action'] === 'load_template' && isset($_GET
 
     if (file_exists($filePath)) {
         $content = file_get_contents($filePath);
-        echo $content;
+        $template = json_decode($content, true);
+    
+        // ✅ Jika ada query di template, simpan ke session
+        if (isset($template['query'])) {
+            $_SESSION['report_query'] = $template['query'];
+        }
+    
+        echo json_encode($template);
     } else {
         echo json_encode(['error' => 'Template not found']);
     }
     exit;
+    
 }
-
-// Handle permintaan data JSON dari DB
-if (isset($_GET['action']) && $_GET['action'] === 'get_data') {
-    header('Content-Type: application/json');
-
-    try {
-        $query = "SELECT * FROM pencatatan LIMIT 10";
-        $data = $reportGenerator->getTableData($query);
-        echo json_encode($data);
-    } catch (Exception $e) {
-        echo json_encode(['error' => $e->getMessage()]);
-    }
-
-    exit;
-}
-
-// Proses Export File
-if (isset($_GET['type'])) {
-    $type = $_GET['type'] ?? '';
-    $filename = 'laporan_' . date('Y-m-d') . '.' . $type;
-
-    $query = "SELECT * FROM pencatatan";
-
-    if ($type === 'pdf') {
-        $designer = buildDesignerFromRequest();
-        $reportGenerator->setDesignerPDF($designer);
-    }
-
-    $reportGenerator->export($query, $type, $filename);
-}
-
 /**
  * Builder Designer dari parameter URL
  */
