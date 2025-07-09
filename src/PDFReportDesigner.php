@@ -3,10 +3,10 @@
 class PDFReportDesigner
 {
     private string $title = '';
-    private string $titleStyle = '';
-    private string $headerStyle = 'font-size: 16px; font-weight: bold; text-align: left; background-color: #f0f0f0;';
-    private string $rowStyle = 'font-size: 12px;';
-    private string $tableStyle = 'width: 100%; border-collapse: collapse;';
+    private string $titleStyle = 'font-size: 24px; font-weight: bold; color: #000000; text-align: center; border: none;';
+    private string $haderTableStyle = 'font-size: 14px; font-weight: bold; color: #000000; text-align: center; background-color: #ffffff; border: 1px solid #000000; padding: 8px;';
+    private string $rowTableStyle = 'font-size: 12px; font-weight: normal; color: #000000; text-align: left; background-color: #f9f9f9; border: 1px solid #000000; padding: 6px;';
+    private string $tableStyle = 'width: 100%; border-collapse: collapse; margin-top: 20px; margin-bottom: 20px; table-layout: fixed; word-wrap: break-word;';
     private string $fontStyle = 'font-family: Arial, sans-serif;';
     private string|array $paperSize = 'A4';
     private string $paperOrientation = 'portrait';
@@ -14,7 +14,7 @@ class PDFReportDesigner
     private array $columnWidths = [];
     private array $customHeaders = [];
     private string $query = '';
-
+    private string $bodyStyle = 'margin: 20px; padding: 50px; box-sizing: border-box; font-family: Arial, sans-serif; background-color: #ffffff;';
 
 
     // Metadata
@@ -33,14 +33,14 @@ class PDFReportDesigner
         $this->titleStyle = $titleStyle;
     }
 
-    public function setHeaderStyle(string $headerStyle): void
+    public function setHeaderTableStyle(string $haderTableStyle): void
     {
-        $this->headerStyle = $headerStyle;
+        $this->haderTableStyle = $haderTableStyle;
     }
 
-    public function setRowStyle(string $rowStyle): void
+    public function setRowTableStyle(string $rowTableStyle): void
     {
-        $this->rowStyle = $rowStyle;
+        $this->rowTableStyle = $rowTableStyle;
     }
 
     public function setTableStyle(string $tableStyle): void
@@ -86,9 +86,15 @@ class PDFReportDesigner
     }
 
     public function setQuery(string $query): void
-{
-    $this->query = $query;
-}
+    {
+        $this->query = $query;
+    }
+
+    public function setBodyStyle(string $bodyStyle): void
+    {
+        $this->bodyStyle = $bodyStyle;
+    }
+
 
     public function getTitleStyle(): string
     {
@@ -130,27 +136,31 @@ class PDFReportDesigner
         return $this->customHeaders;
     }
 
-
     public function getQuery(): string
     {
         return $this->query;
     }
+
+    public function getBodyStyle(): string
+    {
+        return $this->bodyStyle;
+    }
+
     public function generateHTML(array $data): string
     {
         if (empty($data)) {
             return '<p>Tidak ada data untuk ditampilkan.</p>';
         }
-
-        $footerText = addslashes($this->footer); // Hindari karakter khusus
+        $footerText = addslashes($this->footer);
 
         $html = '<html><head>
         <meta name="title" content="' . htmlspecialchars($this->metaTitle) . '">
         <meta name="author" content="' . htmlspecialchars($this->metaAuthor) . '">
         <meta name="subject" content="' . htmlspecialchars($this->metaSubject) . '">
         <style>
-            body { ' . $this->fontStyle . ' }
+            body { ' . $this->bodyStyle . ' }
             @page {
-                margin: 100px 50px 100px 50px;
+                margin: -20px;
             }
             table {
                 width: 100%;
@@ -161,7 +171,6 @@ class PDFReportDesigner
             th, td {
                 max-width: 100%;
                 border: 1px solid #000;
-                padding: 8px;
             }
         </style>
     </head><body>';
@@ -181,7 +190,7 @@ class PDFReportDesigner
             $customLabel = $this->customHeaders[$column] ?? $column;
             $width = $this->columnWidths[$index] ?? null;
             $widthStyle = $width ? "width: $width;" : "";
-            $html .= '<th style="' . $widthStyle . $this->headerStyle . '">' . htmlspecialchars($customLabel) . '</th>';
+            $html .= '<th style="' . $widthStyle . $this->haderTableStyle . '">' . htmlspecialchars($customLabel) . '</th>';
         }
         $html .= '</tr></thead>';
 
@@ -193,7 +202,7 @@ class PDFReportDesigner
             foreach ($rowValues as $i => $cell) {
                 $width = $this->columnWidths[$i] ?? null;
                 $widthStyle = $width ? "width: $width;" : "";
-                $html .= '<td style="' . $widthStyle . $this->rowStyle . '">' . htmlspecialchars($cell) . '</td>';
+                $html .= '<td style="' . $widthStyle . $this->rowTableStyle . '">' . htmlspecialchars($cell) . '</td>';
             }
             $html .= '</tr>';
         }
@@ -231,8 +240,8 @@ class PDFReportDesigner
             'query' => $this->query,
             'title' => $this->title,
             'titleStyle' => $this->parseStyleStringToArray($this->titleStyle),
-            'headerStyle' => $this->parseStyleStringToArray($this->headerStyle),
-            'rowStyle' => $this->parseStyleStringToArray($this->rowStyle),
+            'haderTableStyle' => $this->parseStyleStringToArray($this->haderTableStyle),
+            'rowTableStyle' => $this->parseStyleStringToArray($this->rowTableStyle),
             'tableStyle' => $this->parseStyleStringToArray($this->tableStyle),
             'fontStyle' => $this->fontStyle,
             'paperSize' => $this->paperSize,
@@ -242,7 +251,8 @@ class PDFReportDesigner
             'customHeaders' => $this->customHeaders,
             'metaTitle' => $this->metaTitle,
             'metaAuthor' => $this->metaAuthor,
-            'metaSubject' => $this->metaSubject
+            'metaSubject' => $this->metaSubject,
+            'bodyStyle' => $this->parseStyleStringToArray($this->bodyStyle),
         ];
     }
 

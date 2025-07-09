@@ -163,8 +163,8 @@ function buildDesignerFromRequest(): PDFReportDesigner {
 
     $title = $_GET['title'] ?? 'Laporan';
     $titleStyle = getStyleFromQuery('titleStyle', 'font-size: 24px;');
-    $headerStyle = getStyleFromQuery('headerStyle', 'font-size: 14px; font-weight: bold;');
-    $rowStyle = getStyleFromQuery('rowStyle', 'font-size: 12px;');
+    $haderTableStyle = getStyleFromQuery('haderTableStyle', 'font-size: 14px; font-weight: bold;');
+    $rowTableStyle = getStyleFromQuery('rowTableStyle', 'font-size: 12px;');
     $tableStyle = getStyleFromQuery('tableStyle', 'width: 100%; border-collapse: collapse;');
     $paperSize = $_GET['paperSize'] ?? 'A4';
     $customWidth = isset($_GET['customWidth']) ? (float)$_GET['customWidth'] * 2.83464567 : 0.0;
@@ -175,6 +175,7 @@ function buildDesignerFromRequest(): PDFReportDesigner {
     $metaSubject = $_GET['metaSubject'] ?? '';
     $footer = $_GET['footer'] ?? '';
     $columnWidths = isset($_GET['columnWidths']) ? json_decode(urldecode($_GET['columnWidths']), true) : [];
+    $bodyStyle = getStyleFromQuery('bodyStyle', 'margin: 20px; padding: 20px; box-sizing: border-box; font-family: Arial, sans-serif; background-color: #ffffff;');
 
     $customHeaders = [];
     if (isset($_GET['headers'])) {
@@ -187,10 +188,11 @@ function buildDesignerFromRequest(): PDFReportDesigner {
     $designer = new PDFReportDesigner();
     $designer->setTitle($title);
     $designer->setTitleStyle($titleStyle);
-    $designer->setHeaderStyle($headerStyle);
-    $designer->setRowStyle($rowStyle);
+    $designer->setHeaderTableStyle($haderTableStyle);
+    $designer->setRowTableStyle($rowTableStyle);
     $designer->setTableStyle($tableStyle);
     $designer->setCustomHeaders($customHeaders);
+    $designer->setBodyStyle($bodyStyle);
 
     if ($paperSize === 'custom') {
         $designer->setPaperSize([0, 0, $customWidth, $customHeight]);

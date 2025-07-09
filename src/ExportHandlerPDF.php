@@ -28,7 +28,7 @@ class ExportHandlerPDF extends ExportHandler
         $dompdf = new Dompdf($options);
 
         $html = $this->designer->generateHTML($this->data);
-
+        
         $dompdf->loadHtml($html);
         // Dapatkan paper size dan orientasi
         $paperSize = $this->designer->getPaperSize();
