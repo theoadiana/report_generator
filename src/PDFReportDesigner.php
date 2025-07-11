@@ -8,6 +8,7 @@ class PDFReportDesigner
     private string $rowTableStyle = 'font-size: 12px; font-weight: normal; color: #000000; text-align: left; background-color: #f9f9f9; border: 1px solid #000000; padding: 6px;';
     private string $tableStyle = 'width: 100%; border-collapse: collapse; margin-top: 20px; margin-bottom: 20px; table-layout: fixed; word-wrap: break-word;';
     private string $fontStyle = 'font-family: Arial, sans-serif;';
+    private array $headerStyle = [];
     private string|array $paperSize = 'A4';
     private string $paperOrientation = 'portrait';
     private string $footer = '';
@@ -79,6 +80,10 @@ class PDFReportDesigner
     {
         $this->columnWidths = $widths;
     }
+    public function setHeaderStyle(array $headerStyle): void
+    {
+        $this->headerStyle = $headerStyle;
+    }
 
     public function setCustomHeaders(array $headers): void
     {
@@ -130,6 +135,10 @@ class PDFReportDesigner
     {
         return $this->columnWidths;
     }
+    public function getHeaderStyle(): array
+    {
+        return $this->headerStyle;
+    }
 
     public function getCustomHeaders(): array
     {
@@ -146,12 +155,35 @@ class PDFReportDesigner
         return $this->bodyStyle;
     }
 
+    private function styleArrayToString(array $styleArray): string
+    {
+        $styleString = '';
+        foreach ($styleArray as $key => $value) {
+            $styleString .= $key . ': ' . $value . '; ';
+        }
+        return trim($styleString);
+    }
+
+    private function replacePlaceholders(string $text): string
+    {
+        $replacements = [
+            '{{nama_perusahaan}}' => $this->metaAuthor ?: 'Perusahaan',
+            '{{current_date}}' => date('Y-m-d'),
+            // Tambahkan placeholder lainnya jika diperlukan
+        ];
+
+        return strtr($text, $replacements);
+    }
+
+
+
     public function generateHTML(array $data): string
     {
         if (empty($data)) {
             return '<p>Tidak ada data untuk ditampilkan.</p>';
         }
-        $footerText = addslashes($this->footer);
+
+        $footerText = addslashes($this->replacePlaceholders($this->footer));
 
         $html = '<html><head>
         <meta name="title" content="' . htmlspecialchars($this->metaTitle) . '">
@@ -175,12 +207,30 @@ class PDFReportDesigner
         </style>
     </head><body>';
 
-        // Judul
-        if (!empty($this->title)) {
-            $html .= '<h1 style="' . $this->titleStyle . '">' . htmlspecialchars($this->title) . '</h1>';
+        // Header Style
+        if (!empty($this->headerStyle['rows']) && is_array($this->headerStyle['rows'])) {
+            $html .= '<table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">';
+            foreach ($this->headerStyle['rows'] as $row) {
+                $html .= '<tr>';
+                foreach ($row as $cell) {
+                    $tag = $cell['tag'] ?? 'div';
+                    $content = $this->replacePlaceholders($cell['content'] ?? '');
+                    $colspan = isset($cell['colspan']) ? 'colspan="' . $cell['colspan'] . '"' : '';
+                    $rowspan = isset($cell['rowspan']) ? 'rowspan="' . $cell['rowspan'] . '"' : '';
+                    $styles = isset($cell['styles']) ? $this->styleArrayToString($cell['styles']) : '';
+                    $html .= "<td $colspan $rowspan style='$styles'><$tag>" . htmlspecialchars($content) . "</$tag></td>";
+                }
+                $html .= '</tr>';
+            }
+            $html .= '</table>';
         }
 
-        // Tabel
+        // Judul
+        if (!empty($this->title)) {
+            $html .= '<h1 style="' . $this->titleStyle . '">' . htmlspecialchars($this->replacePlaceholders($this->title)) . '</h1>';
+        }
+
+        // Tabel Data
         $html .= '<table style="' . $this->tableStyle . '">';
         $columns = array_keys($data[0]);
 
@@ -208,27 +258,27 @@ class PDFReportDesigner
         }
         $html .= '</tbody>';
 
-        // Footer tabel opsional (HTML level)
+        // Footer tabel (jika ada)
         if (!empty($this->footer)) {
-            $html .= '<tfoot><tr><td colspan="' . count($columns) . '" style="text-align: center; font-weight: bold;">' . htmlspecialchars($this->footer) . '</td></tr></tfoot>';
+            $html .= '<tfoot><tr><td colspan="' . count($columns) . '" style="text-align: center; font-weight: bold;">' . htmlspecialchars($this->replacePlaceholders($this->footer)) . '</td></tr></tfoot>';
         }
 
         $html .= '</table>';
 
-        // Footer PDF (page number)
+        // Footer PDF (nomor halaman)
         $html .= '
-    <script type="text/php">
-        if (isset($pdf)) {
-            $pdf->page_script(function ($pageNumber, $pageCount, $pdf) {
-                $font = $pdf->getFontMetrics()->getFont("Helvetica", "normal");
-                $text = "' . $footerText . ' - Halaman $pageNumber dari $pageCount";
-                $width = $pdf->get_width();
-                $textWidth = $pdf->getFontMetrics()->getTextWidth($text, $font, 10);
-                $x = ($width - $textWidth) / 2;
-                $pdf->text($x, 820, $text, $font, 10);
-            });
-        }
-    </script>';
+        <script type="text/php">
+            if (isset($pdf)) {
+                $pdf->page_script(function ($pageNumber, $pageCount, $pdf) {
+                    $font = $pdf->getFontMetrics()->getFont("Helvetica", "normal");
+                    $text = "' . $footerText . ' - Halaman $pageNumber dari $pageCount";
+                    $width = $pdf->get_width();
+                    $textWidth = $pdf->getFontMetrics()->getTextWidth($text, $font, 10);
+                    $x = ($width - $textWidth) / 2;
+                    $pdf->text($x, 820, $text, $font, 10);
+                });
+            }
+        </script>';
 
         $html .= '</body></html>';
         return $html;
@@ -253,6 +303,7 @@ class PDFReportDesigner
             'metaAuthor' => $this->metaAuthor,
             'metaSubject' => $this->metaSubject,
             'bodyStyle' => $this->parseStyleStringToArray($this->bodyStyle),
+            'headerStyle' => $this->headerStyle,
         ];
     }
 
