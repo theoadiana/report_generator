@@ -94,8 +94,6 @@ document.addEventListener("DOMContentLoaded", () => {
         "metaSubject",
         "customWidth",
         "customHeight",
-        "title",
-        "titleStyle",
         "haderTableStyle",
         "rowTableStyle",
         "rowColor",
@@ -107,13 +105,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const selectorVars = manager.generateSelectorVariables();
 
     const styleGroups = {
-        titleStyle: {
-            'font-size': '24px',
-            'font-weight': 'bold',
-            'color': '#000000',
-            'text-align': 'center',
-            'border': 'none',
-        },
         haderTableStyle: {
             'font-size': '14px',
             'font-weight': 'bold',
@@ -162,75 +153,77 @@ document.addEventListener("DOMContentLoaded", () => {
             rows: [
                 [
                     {
-                        content: '<img src="{{logo_url}}" alt="Logo" style="height: 50px;">',
-                        tag: 'div',
+                        content: "Cell 1",
+                        tag: "div",
                         colspan: 1,
-                        rowspan: 2,
+                        rowspan: 1,
                         styles: {
-                            "text-align": "center",
                             "border": "1px solid #000",
-                            "padding": "5px"
+                            "padding": "5px",
+                            "text-align": "center"
                         }
                     },
                     {
-                        content: "{{nama_perusahaan}}",
-                        tag: "h2",
-                        colspan: 3,
+                        content: "Cell 2",
+                        tag: "div",
+                        colspan: 1,
                         rowspan: 1,
                         styles: {
-                            "font-size": "18px",
-                            "font-weight": "bold",
-                            "text-align": "center",
                             "border": "1px solid #000",
-                            "padding": "8px",
-                            "margin": "0"
+                            "padding": "5px",
+                            "text-align": "center"
+                        }
+                    },
+                    {
+                        content: "Cell 3",
+                        tag: "div",
+                        colspan: 1,
+                        rowspan: 1,
+                        styles: {
+                            "border": "1px solid #000",
+                            "padding": "5px",
+                            "text-align": "center"
                         }
                     }
                 ],
                 [
                     {
-                        content: "Laporan Stok Barang",
-                        tag: "h1",
-                        colspan: 3,
-                        rowspan: 1,
-                        styles: {
-                            "font-size": "20px",
-                            "font-weight": "bold",
-                            "text-align": "center",
-                            "border": "1px solid #000",
-                            "padding": "10px",
-                            "margin": "0"
-                        }
-                    }
-                ],
-                [
-                    {
-                        content: "Tanggal:",
-                        tag: "span",
+                        content: "Cell 4",
+                        tag: "div",
                         colspan: 1,
                         rowspan: 1,
                         styles: {
-                            "font-size": "12px",
-                            "text-align": "left",
                             "border": "1px solid #000",
-                            "padding": "5px"
+                            "padding": "5px",
+                            "text-align": "center"
                         }
                     },
                     {
-                        content: "{{current_date}}",
-                        tag: "span",
-                        colspan: 3,
+                        content: "Cell 5",
+                        tag: "div",
+                        colspan: 1,
                         rowspan: 1,
                         styles: {
-                            "font-size": "12px",
-                            "text-align": "left",
                             "border": "1px solid #000",
-                            "padding": "5px"
+                            "padding": "5px",
+                            "text-align": "center"
+                        }
+                    },
+                    {
+                        content: "Cell 6",
+                        tag: "div",
+                        colspan: 1,
+                        rowspan: 1,
+                        styles: {
+                            "border": "1px solid #000",
+                            "padding": "5px",
+                            "text-align": "center"
                         }
                     }
                 ]
             ]
         }
+
     };
 
 
@@ -333,7 +326,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 .generatorPDF-table { ${PDFDesigner.getStyleString(styleGroups.tableStyle)} }
                 .generatorPDF-th { ${PDFDesigner.getStyleString(styleGroups.haderTableStyle)} }
                 .generatorPDF-td { ${PDFDesigner.getStyleString(styleGroups.rowTableStyle)} }
-                .generatorPDF-title { background-color: ${bodyBackground}; ${PDFDesigner.getStyleString(styleGroups.titleStyle)} }
                 .generatorPDF-footer { ${PDFDesigner.getStyleString(styleGroups.footerStyle)} }
                 .resizable-wrapper {
                     width: 100%;
@@ -350,7 +342,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!Array.isArray(styleGroups.headerStyle?.rows)) return '';
 
             return `
-                <table id="table_header_style" style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
+                <table id="table_header_style" style="width: 100%; border-collapse: collapse; margin-bottom: 10px; table-layout: fixed;">
                     ${styleGroups.headerStyle.rows.map((row, rowIndex) => `
                         <tr>
                             ${row.map((cell, colIndex) => {
@@ -358,15 +350,32 @@ document.addEventListener("DOMContentLoaded", () => {
                 const content = replacePlaceholders(cell.content || '');
                 const colspan = cell.colspan ? `colspan="${cell.colspan}"` : '';
                 const rowspan = cell.rowspan ? `rowspan="${cell.rowspan}"` : '';
-                const styles = PDFDesigner.getStyleString(cell.styles || {});
                 const cellId = `header_cell_${rowIndex}_${colIndex}`;
-
                 const editableTags = ['span', 'div', 'h1', 'h2', 'h3', 'p'];
                 const editable = editableTags.includes(tag.toLowerCase()) ? 'contentEditable="true"' : '';
 
-                return `<td ${colspan} ${rowspan} style="${styles}">
-                                            <${tag} id="${cellId}" ${editable}>${content}</${tag}>
-                                        </td>`;
+                // Ambil style yang dikonfigurasi
+                const styleObj = cell.styles || {};
+                const width = styleObj.width || '120px'; // default width
+                const height = styleObj.height || '50px'; // default height
+
+                const tdStyle = `width:${width}; height:${height}; padding:5px; border:1px solid #000; position: relative;`;
+
+                return `<td ${colspan} ${rowspan} style="${tdStyle}">
+                                    <${tag} id="${cellId}" ${editable}
+                                        style="
+                                            width: 100%;
+                                            height: 100%;
+                                            box-sizing: border-box;
+                                            display: block;
+                                            margin: 0;
+                                            white-space: normal;
+                                            word-break: break-word;
+                                            overflow-wrap: anywhere;
+                                        ">
+                                        ${content}
+                                    </${tag}>
+                                </td>`;
             }).join('')}
                         </tr>
                     `).join('')}
@@ -379,7 +388,6 @@ document.addEventListener("DOMContentLoaded", () => {
             ${styleTag}
             <div class="generatorPDF">
                 ${renderHeaderTable()}
-                <h1 id="title" class="generatorPDF-title" contentEditable="true">${values.title}</h1>
                 <table class="generatorPDF-table" id="table_resizeable">
                     <thead>
                         <tr>
@@ -406,17 +414,6 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
 
         previewEl.innerHTML = html;
-
-        // 🔽 Event listener judul
-        const titleEl = document.getElementById("title");
-        if (titleEl) {
-            titleEl.addEventListener("blur", () => {
-                const text = titleEl.innerText;
-                if (manager.selectors.title) {
-                    manager.selectors.title.content = text;
-                }
-            });
-        }
 
         // 🔽 Header blur listener
         headers.forEach(headerName => {
@@ -461,92 +458,138 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
         injectHeaderCellControls("table_header_style");
+        enableHeaderDragAndDrop("table_header_style");
+        makeTableResizable(document.getElementById("table_header_style"));
     }
 
 
     function enableHeaderDragAndDrop(tableId = "table_header_style") {
         const table = document.getElementById(tableId);
         if (!table) return;
-
-        let dragSrcEl = null;
-
+    
+        let dragSrcTd = null;
+    
         table.querySelectorAll("td").forEach(td => {
-            td.setAttribute("draggable", true);
-            td.style.cursor = "move";
-
-            // Drag start
-            td.addEventListener("dragstart", function (e) {
+            td.setAttribute("draggable", false);
+            td.style.cursor = "default";
+            td.style.position = "relative";
+    
+            let dragHandle = td.querySelector(".drag-handle");
+            if (!dragHandle) {
+                dragHandle = document.createElement("div");
+                dragHandle.className = "drag-handle";
+                dragHandle.title = "Geser untuk memindahkan cell";
+                dragHandle.innerHTML = "⠿";
+    
+                Object.assign(dragHandle.style, {
+                    position: "absolute",
+                    top: "2px",
+                    right: "2px",
+                    cursor: "move",
+                    fontSize: "12px",
+                    zIndex: 16,
+                    color: "#999",
+                    background: "transparent",
+                    userSelect: "none",
+                    lineHeight: "1"
+                });
+    
+                td.appendChild(dragHandle);
+            }
+    
+            dragHandle.setAttribute("draggable", true);
+    
+            dragHandle.addEventListener("dragstart", function (e) {
                 if (PDFDesigner.isResizing) {
                     e.preventDefault();
                     return;
                 }
-
-                dragSrcEl = this;
+    
+                dragSrcTd = td;
+                td.classList.add("dragging-td");
                 e.dataTransfer.effectAllowed = "move";
-                e.dataTransfer.setData("text/html", this.innerHTML);
-                this.style.opacity = "0.5";
+                e.dataTransfer.setData("text/plain", "dragging");
+    
+                // Ghost image
+                const ghost = td.cloneNode(true);
+                ghost.classList.remove("dragging-td"); // pastikan tidak terbawa
+                ghost.style.position = "absolute";
+                ghost.style.top = "-9999px";
+                ghost.style.left = "-9999px";
+                ghost.style.opacity = "0.7";
+                ghost.style.pointerEvents = "none";
+                ghost.style.zIndex = "9999";
+                ghost.style.boxSizing = "border-box";
+                ghost.style.width = `${td.offsetWidth}px`;
+                ghost.style.height = `${td.offsetHeight}px`;
+    
+                document.body.appendChild(ghost);
+                e.dataTransfer.setDragImage(ghost, 0, 0);
+                setTimeout(() => document.body.removeChild(ghost), 0);
             });
-
-            // Drag end
-            td.addEventListener("dragend", function () {
-                this.style.opacity = "1";
+    
+            dragHandle.addEventListener("dragend", function () {
+                if (dragSrcTd) {
+                    dragSrcTd.classList.remove("dragging-td");
+                    dragSrcTd = null;
+                }
             });
-
-            // Drag over
+    
             td.addEventListener("dragover", function (e) {
                 if (PDFDesigner.isResizing) return;
                 e.preventDefault();
                 e.dataTransfer.dropEffect = "move";
             });
-
+    
             td.addEventListener("dragenter", function () {
                 if (!PDFDesigner.isResizing) {
                     this.classList.add("drag-over");
                 }
             });
-
+    
             td.addEventListener("dragleave", function () {
                 this.classList.remove("drag-over");
             });
-
-            // Drop
+    
             td.addEventListener("drop", function (e) {
-                if (PDFDesigner.isResizing) {
-                    e.preventDefault();
-                    return;
-                }
-
+                if (PDFDesigner.isResizing || !dragSrcTd || dragSrcTd === this) return;
+    
+                e.preventDefault();
                 e.stopPropagation();
+    
                 this.classList.remove("drag-over");
-
-                if (dragSrcEl && dragSrcEl !== this) {
-                    // Simpan referensi style inline sebelum swap
-                    const tmpHTML = this.innerHTML;
-                    const tmpStyle = this.getAttribute("style");
-
-                    // Tukar innerHTML dan style antar cell
-                    this.innerHTML = dragSrcEl.innerHTML;
-                    this.setAttribute("style", dragSrcEl.getAttribute("style"));
-
-                    dragSrcEl.innerHTML = tmpHTML;
-                    dragSrcEl.setAttribute("style", tmpStyle);
-
-                    // Reapply resizer karena innerHTML swap menghapusnya
-                    makeTableResizable(table);
-                }
-                return false;
+    
+                const targetTd = this;
+                const srcClone = dragSrcTd.cloneNode(true);
+                const targetClone = targetTd.cloneNode(true);
+    
+                dragSrcTd.replaceWith(targetClone);
+                targetTd.replaceWith(srcClone);
+    
+                makeTableResizable(table);
+                enableHeaderDragAndDrop(tableId);
+            });
+    
+            td.addEventListener("mousemove", function (e) {
+                const isInEditable = e.target.closest("[contenteditable='true']");
+                td.style.cursor = isInEditable ? "text" : "default";
+            });
+    
+            td.addEventListener("mouseleave", function () {
+                td.style.cursor = "default";
             });
         });
     }
+    
 
     function injectHeaderCellControls(tableId = "table_header_style") {
         const table = document.getElementById(tableId);
         if (!table) return;
-    
+
         // Hapus semua tombol lama
-        table.querySelectorAll(".cell-control-button").forEach(btn => btn.remove());
-    
-        // Inject style global (sekali saja)
+        table.querySelectorAll(".cell-control-button, .add-popover").forEach(el => el.remove());
+
+        // Inject style global sekali saja
         if (!document.getElementById("cell-control-style")) {
             const style = document.createElement("style");
             style.id = "cell-control-style";
@@ -564,6 +607,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     cursor: pointer;
                     opacity: 0.6;
                     transition: background-color 0.2s, opacity 0.2s;
+                    position: absolute;
+                    z-index: 15;
                 }
                 .cell-control-button:hover {
                     opacity: 1;
@@ -584,124 +629,160 @@ document.addEventListener("DOMContentLoaded", () => {
                     background-color: #dc3545;
                     color: white;
                 }
-            `;
-            document.head.appendChild(style);
-        }
-    
-        table.querySelectorAll("tr").forEach((tr, rowIndex) => {
-            tr.querySelectorAll("td").forEach((td, cellIndex) => {
-                td.style.position = "relative";
-    
-                const isLastCellInRow = (cellIndex === tr.cells.length - 1);
-    
-                const createBtn = (text, title, cls, onClick) => {
-                    const btn = document.createElement("button");
-                    btn.textContent = text;
-                    btn.title = title;
-                    btn.className = `cell-control-button ${cls}`;
-                    btn.addEventListener("click", e => {
-                        e.stopPropagation();
-                        onClick();
-                    });
-                    return btn;
-                };
-    
-                // === Horizontal Button Group ===
-                const hGroup = document.createElement("div");
-                hGroup.style.cssText = `
+                .add-popover {
                     position: absolute;
-                    top: 50%;
-                    right: -22px;
-                    transform: translateY(-50%);
                     display: flex;
                     flex-direction: column;
                     align-items: center;
-                    z-index: 10;
                     gap: 2px;
-                `;
-    
-                // ➕ Tambah cell ke kanan
-                const btnAddRight = createBtn("+", "Tambah Cell Kanan", "cell-control-add", () => {
-                    const newCell = document.createElement("td");
-                    newCell.innerHTML = '<div contenteditable="true">Baru</div>';
-                    tr.insertBefore(newCell, td.nextSibling);
-    
-                    if (styleGroups.headerStyle?.rows?.[rowIndex]) {
-                        const clone = JSON.parse(JSON.stringify(styleGroups.headerStyle.rows[rowIndex][cellIndex]));
-                        clone.content = "Baru";
-                        styleGroups.headerStyle.rows[rowIndex].splice(cellIndex + 1, 0, clone);
-                    }
-    
-                    injectHeaderCellControls(tableId);
+                    background: white;
+                    border: 1px solid #ccc;
+                    border-radius: 5px;
+                    padding: 4px;
+                    z-index: 20;
+                }
+                .add-popover button {
+                    width: 20px;
+                    height: 20px;
+                    font-size: 12px;
+                    cursor: pointer;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        const createBtn = (text, title, cls, onClick) => {
+            const btn = document.createElement("button");
+            btn.textContent = text;
+            btn.title = title;
+            btn.className = `cell-control-button ${cls}`;
+            btn.addEventListener("click", e => {
+                e.stopPropagation();
+                onClick();
+            });
+            return btn;
+        };
+
+        const createAddPopover = (td, rowIndex, cellIndex) => {
+            const popover = document.createElement("div");
+            popover.className = "add-popover";
+
+            const directions = [
+                { dir: "↑", title: "Tambah Baris di Atas", action: () => addRow(rowIndex) },
+                { dir: "←", title: "Tambah Cell Kiri", action: () => addCell(rowIndex, cellIndex, "left") },
+                { dir: "→", title: "Tambah Cell Kanan", action: () => addCell(rowIndex, cellIndex, "right") },
+                { dir: "↓", title: "Tambah Baris di Bawah", action: () => addRow(rowIndex + 1) },
+            ];
+
+            directions.forEach(({ dir, title, action }) => {
+                const btn = document.createElement("button");
+                btn.textContent = dir;
+                btn.title = title;
+                btn.addEventListener("click", e => {
+                    e.stopPropagation();
+                    action();
                 });
-    
-                hGroup.appendChild(btnAddRight);
-    
-                // ❌ Hapus cell (jika jumlah > 1)
-                if (tr.cells.length > 1) {
-                    const btnDel = createBtn("×", "Hapus Cell", "cell-control-del", () => {
-                        tr.removeChild(td);
-                        if (styleGroups.headerStyle?.rows?.[rowIndex]) {
-                            styleGroups.headerStyle.rows[rowIndex].splice(cellIndex, 1);
-                        }
-                        injectHeaderCellControls(tableId);
-                    });
-                    hGroup.appendChild(btnDel);
-                }
-    
-                td.appendChild(hGroup);
-    
-                // === Vertical Button Group (bawah) ===
-                if (isLastCellInRow) {
-                    const vGroup = document.createElement("div");
-                    vGroup.style.cssText = `
-                        position: absolute;
-                        left: 50%;
-                        bottom: -22px;
-                        transform: translateX(-50%);
-                        display: flex;
-                        flex-direction: row;
-                        gap: 2px;
-                        z-index: 10;
-                    `;
-    
-                    // ➕ Tambah baris ke bawah
-                    const btnAddBelow = createBtn("↓", "Tambah Baris di Bawah", "cell-control-add", () => {
-                        const newRow = document.createElement("tr");
-                        const newCell = document.createElement("td");
-                        newCell.innerHTML = '<div contenteditable="true">Baru</div>';
-                        newRow.appendChild(newCell);
-                        table.tBodies[0].insertBefore(newRow, tr.nextSibling);
-    
-                        if (Array.isArray(styleGroups.headerStyle?.rows)) {
-                            const newRowData = [{ tag: "div", content: "Baru", styles: {} }];
-                            styleGroups.headerStyle.rows.splice(rowIndex + 1, 0, newRowData);
-                        }
-    
-                        injectHeaderCellControls(tableId);
-                    });
-                    vGroup.appendChild(btnAddBelow);
-    
-                    // ❌ Hapus baris bawah (jika lebih dari 1 baris)
-                    if (table.rows.length > 1) {
-                        const btnDelRow = createBtn("×", "Hapus Baris", "cell-control-del", () => {
-                            if (rowIndex < table.rows.length) {
-                                table.deleteRow(rowIndex);
-                                if (styleGroups.headerStyle?.rows?.[rowIndex]) {
-                                    styleGroups.headerStyle.rows.splice(rowIndex, 1);
-                                }
-                                injectHeaderCellControls(tableId);
-                            }
-                        });
-                        vGroup.appendChild(btnDelRow);
+                popover.appendChild(btn);
+            });
+
+            td.appendChild(popover);
+            popover.style.top = "20px";
+            popover.style.left = "20px";
+        };
+
+        const defaultCell = () => ({
+            tag: "div",
+            content: "Baru",
+            styles: {
+                "border": "1px solid #000",
+                "padding": "5px",
+                "text-align": "center"
+            }
+        });
+
+        const createNewCellElement = () => {
+            const td = document.createElement("td");
+            td.style.position = "relative";
+            td.style.border = "1px solid #000";
+            td.style.padding = "5px";
+            td.innerHTML = `<div contenteditable="true">Baru</div>`;
+            return td;
+        };
+
+        const addCell = (rowIdx, cellIdx, position) => {
+            const tr = table.rows[rowIdx];
+            if (!tr) return;
+
+            const refCell = tr.cells[cellIdx];
+            const newCell = createNewCellElement();
+
+            if (position === "left") tr.insertBefore(newCell, refCell);
+            else tr.insertBefore(newCell, refCell.nextSibling);
+
+            // Update styleGroups
+            const base = styleGroups.headerStyle?.rows?.[rowIdx]?.[cellIdx] || defaultCell();
+            const clone = JSON.parse(JSON.stringify(base));
+            clone.content = "Baru";
+            const insertIndex = position === "left" ? cellIdx : cellIdx + 1;
+            styleGroups.headerStyle.rows[rowIdx].splice(insertIndex, 0, clone);
+
+            injectHeaderCellControls(tableId);
+            enableHeaderDragAndDrop(tableId);
+            makeTableResizable(table);
+        };
+
+        const addRow = (rowIdx) => {
+            const newRow = document.createElement("tr");
+            const newCell = createNewCellElement();
+            newRow.appendChild(newCell);
+
+            const refRow = table.rows[rowIdx];
+            if (refRow) table.tBodies[0].insertBefore(newRow, refRow);
+            else table.tBodies[0].appendChild(newRow);
+
+            const newRowData = [defaultCell()];
+            styleGroups.headerStyle.rows.splice(rowIdx, 0, newRowData);
+
+            injectHeaderCellControls(tableId);
+            enableHeaderDragAndDrop(tableId);
+            makeTableResizable(table);
+        };
+
+        // Loop semua cell dan inject tombol
+        table.querySelectorAll("tr").forEach((tr, rowIndex) => {
+            tr.querySelectorAll("td").forEach((td, cellIndex) => {
+                td.style.position = "relative";
+
+                // Tombol hapus
+                const btnDel = createBtn("×", "Hapus Cell", "cell-control-del", () => {
+                    tr.removeChild(td);
+                    if (styleGroups.headerStyle?.rows?.[rowIndex]) {
+                        styleGroups.headerStyle.rows[rowIndex].splice(cellIndex, 1);
                     }
-    
-                    td.appendChild(vGroup);
-                }
+                    injectHeaderCellControls(tableId);
+                    enableHeaderDragAndDrop(tableId);
+                    makeTableResizable(table);
+                });
+                td.appendChild(btnDel);
+                btnDel.style.top = "0";
+                btnDel.style.left = "0";
+
+                // Tombol tambah
+                const btnAdd = createBtn("+", "Tambah", "cell-control-add", () => {
+                    const existingPopover = td.querySelector(".add-popover");
+                    table.querySelectorAll(".add-popover").forEach(p => p.remove());
+                    if (!existingPopover) {
+                        createAddPopover(td, rowIndex, cellIndex);
+                    }
+                });
+                td.appendChild(btnAdd);
+                btnAdd.style.bottom = "0";
+                btnAdd.style.right = "0";
             });
         });
     }
-    
+
+
 
     // Tombol tambah selector
     const addSelectorBtn = document.getElementById("addSelectorBtn");
@@ -837,11 +918,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
-        console.log("buildPDF title style", encodeURIComponent(JSON.stringify(styleGroups.titleStyle || {})));
-
         const params = new URLSearchParams({
-            title: values.title || '',
-            titleStyle: encodeURIComponent(JSON.stringify(styleGroups.titleStyle || {})),
             haderTableStyle: encodeURIComponent(JSON.stringify(styleGroups.haderTableStyle || {})),
             rowTableStyle: encodeURIComponent(JSON.stringify(styleGroups.rowTableStyle || {})),
             tableStyle: encodeURIComponent(JSON.stringify(styleGroups.tableStyle || {})),
@@ -955,7 +1032,6 @@ document.addEventListener("DOMContentLoaded", () => {
             // Set selector values
             if (PDFDesigner && PDFDesigner.updateSelectorValues) {
                 PDFDesigner.updateSelectorValues({
-                    title: template.title || '',
                     paperSize: template.paperSize || 'A4',
                     paperOrientation: template.paperOrientation || 'portrait',
                     metaTitle: template.metaTitle || '',
@@ -979,13 +1055,11 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             // Update styleGroups
-            styleGroups.titleStyle = template.titleStyle || {};
             styleGroups.haderTableStyle = template.haderTableStyle || {};
             styleGroups.rowTableStyle = template.rowTableStyle || {};
             styleGroups.tableStyle = template.tableStyle || {};
             styleGroups.columnWidths = template.columnWidths || [];
             styleGroups.bodyStyle = template.bodyStyle || [];
-            console.log("styleGroups.titleStyle", styleGroups.titleStyle);
             // Apply style ke form input jika pakai input form style
             if (typeof applyStyleGroupsToForm === 'function') {
                 applyStyleGroupsToForm();
@@ -1040,7 +1114,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         cachedData = result.data;
         renderPreview(cachedData);
-        truncateTableRowsToFitPreview();
     }
 
 
@@ -1054,47 +1127,45 @@ document.addEventListener("DOMContentLoaded", () => {
         const cols = table.querySelectorAll("th, td");
 
         cols.forEach((col, index) => {
-            // Pastikan col bisa menjadi posisi relatif
             col.style.position = "relative";
 
-            // Wrapper agar posisi resizer tidak mempengaruhi isi cell
+            // Wrapper transparan untuk meletakkan resizer
             const wrapper = document.createElement("div");
             wrapper.style.position = "absolute";
             wrapper.style.top = "0";
             wrapper.style.left = "0";
             wrapper.style.right = "0";
             wrapper.style.bottom = "0";
-            wrapper.style.pointerEvents = "none";
+            wrapper.style.pointerEvents = "none"; // penting agar isi cell tetap interaktif
             col.appendChild(wrapper);
 
-            // Resizer Horizontal (kanan)
+            // ===== Resizer Horizontal (kanan) =====
             const resizerRight = document.createElement("div");
             resizerRight.style.position = "absolute";
             resizerRight.style.top = "0";
-            resizerRight.style.right = "-2px"; // sedikit di luar cell
-            resizerRight.style.width = "10px";
+            resizerRight.style.right = "-2px"; // posisi tepat di garis kanan
+            resizerRight.style.width = "4px"; // DIPERKECIL
             resizerRight.style.height = "100%";
             resizerRight.style.cursor = "col-resize";
             resizerRight.style.zIndex = "1000";
             resizerRight.style.pointerEvents = "auto";
+            wrapper.appendChild(resizerRight);
 
-            // Resizer Vertikal (bawah)
+            // ===== Resizer Vertikal (bawah) =====
             const resizerBottom = document.createElement("div");
             resizerBottom.style.position = "absolute";
-            resizerBottom.style.bottom = "-2px"; // sedikit di luar cell
+            resizerBottom.style.bottom = "-2px"; // posisi tepat di garis bawah
             resizerBottom.style.left = "0";
-            resizerBottom.style.height = "10px";
             resizerBottom.style.width = "100%";
+            resizerBottom.style.height = "4px"; // DIPERKECIL
             resizerBottom.style.cursor = "row-resize";
             resizerBottom.style.zIndex = "1000";
             resizerBottom.style.pointerEvents = "auto";
-
-            wrapper.appendChild(resizerRight);
             wrapper.appendChild(resizerBottom);
 
             let startX, startY, startWidth, startHeight, tableWidth;
 
-            // --------- Resize Width ---------
+            // === Resize Lebar Kolom ===
             resizerRight.addEventListener("mousedown", function (e) {
                 PDFDesigner.isResizing = true;
                 startX = e.pageX;
@@ -1112,9 +1183,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (newWidthPx < minWidthPx) newWidthPx = minWidthPx;
                 const newWidthPercent = (newWidthPx / tableWidth) * 100;
 
-                const existingHeight = col.style.height || '';
                 col.style.width = `${newWidthPercent}%`;
-                col.style.height = existingHeight;
 
                 if (!styleGroups.columnWidths) styleGroups.columnWidths = [];
                 styleGroups.columnWidths[index] = `${newWidthPercent.toFixed(2)}%`;
@@ -1126,7 +1195,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 document.removeEventListener("mouseup", onMouseUpWidth);
             }
 
-            // --------- Resize Height ---------
+            // === Resize Tinggi Baris ===
             resizerBottom.addEventListener("mousedown", function (e) {
                 PDFDesigner.isResizing = true;
                 startY = e.pageY;
@@ -1141,9 +1210,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 let newHeightPx = startHeight + delta;
                 if (newHeightPx < 10) newHeightPx = 10;
 
-                const existingWidth = col.style.width || '';
                 col.style.height = `${newHeightPx}px`;
-                col.style.width = existingWidth;
 
                 if (!styleGroups.haderTableStyle) styleGroups.haderTableStyle = {};
                 styleGroups.haderTableStyle['height'] = `${newHeightPx}px`;
@@ -1156,7 +1223,6 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     }
-
 
 
     function applyColumnWidths(table) {
@@ -1176,33 +1242,6 @@ document.addEventListener("DOMContentLoaded", () => {
         selectorVars.customWidth.disabled = !isCustom;
         selectorVars.customHeight.disabled = !isCustom;
     }
-
-    function truncateTableRowsToFitPreview() {
-        const preview = document.getElementById("preview");
-        const table = preview.querySelector("table");
-    
-        if (!table) return;
-    
-        const maxHeight = preview.offsetHeight;
-        const rows = table.querySelectorAll("tr");
-        let accumulatedHeight = 0;
-    
-        for (let i = 0; i < rows.length; i++) {
-            const row = rows[i];
-            const rowHeight = row.offsetHeight;
-    
-            accumulatedHeight += rowHeight;
-    
-            if (accumulatedHeight > maxHeight) {
-                // Sembunyikan baris yang melebihi kertas
-                for (let j = i; j < rows.length; j++) {
-                    rows[j].style.display = "none";
-                }
-                break;
-            }
-        }
-    }
-    
 
     function setPreviewSize() {
         const paperSize = selectorVars.paperSize.value;
@@ -1257,6 +1296,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     updateStyleGroupsFromInputs();
     generatePreview();
+
+    document.addEventListener("click", function (e) {
+        // Hapus semua popover jika klik bukan pada tombol tambah atau popover itu sendiri
+        const allPopovers = document.querySelectorAll(".add-popover");
+        const isAddButton = e.target.closest(".cell-control-add");
+        const isInsidePopover = e.target.closest(".add-popover");
+
+        if (!isAddButton && !isInsidePopover) {
+            allPopovers.forEach(p => p.remove());
+        }
+    });
+
 
 
     downloadButton.addEventListener('click', () => {

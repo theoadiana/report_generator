@@ -2,8 +2,6 @@
 
 class PDFReportDesigner
 {
-    private string $title = '';
-    private string $titleStyle = 'font-size: 24px; font-weight: bold; color: #000000; text-align: center; border: none;';
     private string $haderTableStyle = 'font-size: 14px; font-weight: bold; color: #000000; text-align: center; background-color: #ffffff; border: 1px solid #000000; padding: 8px;';
     private string $rowTableStyle = 'font-size: 12px; font-weight: normal; color: #000000; text-align: left; background-color: #f9f9f9; border: 1px solid #000000; padding: 6px;';
     private string $tableStyle = 'width: 100%; border-collapse: collapse; margin-top: 20px; margin-bottom: 20px; table-layout: fixed; word-wrap: break-word;';
@@ -22,17 +20,6 @@ class PDFReportDesigner
     private string $metaTitle = '';
     private string $metaAuthor = '';
     private string $metaSubject = '';
-
-    // Setter untuk judul
-    public function setTitle(string $title): void
-    {
-        $this->title = $title;
-    }
-
-    public function setTitleStyle(string $titleStyle): void
-    {
-        $this->titleStyle = $titleStyle;
-    }
 
     public function setHeaderTableStyle(string $haderTableStyle): void
     {
@@ -98,12 +85,6 @@ class PDFReportDesigner
     public function setBodyStyle(string $bodyStyle): void
     {
         $this->bodyStyle = $bodyStyle;
-    }
-
-
-    public function getTitleStyle(): string
-    {
-        return $this->titleStyle;
     }
 
     public function getFontStyle(): string
@@ -225,11 +206,6 @@ class PDFReportDesigner
             $html .= '</table>';
         }
 
-        // Judul
-        if (!empty($this->title)) {
-            $html .= '<h1 style="' . $this->titleStyle . '">' . htmlspecialchars($this->replacePlaceholders($this->title)) . '</h1>';
-        }
-
         // Tabel Data
         $html .= '<table style="' . $this->tableStyle . '">';
         $columns = array_keys($data[0]);
@@ -288,8 +264,6 @@ class PDFReportDesigner
     {
         return [
             'query' => $this->query,
-            'title' => $this->title,
-            'titleStyle' => $this->parseStyleStringToArray($this->titleStyle),
             'haderTableStyle' => $this->parseStyleStringToArray($this->haderTableStyle),
             'rowTableStyle' => $this->parseStyleStringToArray($this->rowTableStyle),
             'tableStyle' => $this->parseStyleStringToArray($this->tableStyle),

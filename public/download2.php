@@ -160,9 +160,7 @@ function buildDesignerFromRequest(): PDFReportDesigner {
 
         return $default;
     }
-
-    $title = $_GET['title'] ?? 'Laporan';
-    $titleStyle = getStyleFromQuery('titleStyle', 'font-size: 24px;');
+    
     $haderTableStyle = getStyleFromQuery('haderTableStyle', 'font-size: 14px; font-weight: bold;');
     $rowTableStyle = getStyleFromQuery('rowTableStyle', 'font-size: 12px;');
     $tableStyle = getStyleFromQuery('tableStyle', 'width: 100%; border-collapse: collapse;');
@@ -187,8 +185,6 @@ function buildDesignerFromRequest(): PDFReportDesigner {
     }
 
     $designer = new PDFReportDesigner();
-    $designer->setTitle($title);
-    $designer->setTitleStyle($titleStyle);
     $designer->setHeaderTableStyle($haderTableStyle);
     $designer->setRowTableStyle($rowTableStyle);
     $designer->setTableStyle($tableStyle);

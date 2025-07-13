@@ -17,7 +17,7 @@ require_once __DIR__ . '/public/download2.php';
         <!-- Header dengan Tabs -->
         <div class="flex space-x-4 text-sm font-semibold">
             <button class="tab-button text-gray-600 hover:text-black py-2 px-3 border-b-2 border-transparent"
-                data-tab="title">Title</button>
+                data-tab="headerStyle">Header Style</button>
             <button class="tab-button text-gray-600 hover:text-black py-2 px-3 border-b-2 border-transparent"
                 data-tab="paperSettings">Paper Settings</button>
             <button class="tab-button text-gray-600 hover:text-black py-2 px-3 border-b-2 border-transparent"
@@ -47,28 +47,8 @@ require_once __DIR__ . '/public/download2.php';
         <div class="flex">
             <!-- Kontainer Tab Panel -->
             <div class="w-full bg-white p-4 border-b space-y-4">
-                <!-- Konten Title -->
-                <div class="tab-content hidden" data-content="title">
-                    <div>
-                        <label class="block text-sm font-medium">Title Font Size</label>
-                        <input type="text" class="w-full mt-1 p-2 border rounded" value="16"
-                            data-style-group="titleStyle" data-style-attr="font-size">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium">Title Font Color</label>
-                        <input type="color" class="w-full mt-1 p-2 border rounded" value="#000000"
-                            data-style-group="titleStyle" data-style-attr="color">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium">Title Text Align</label>
-                        <select class="w-full mt-1 p-2 border rounded" value="center" data-style-group="titleStyle"
-                            data-style-attr="text-align">
-                            <option value="left">Left</option>
-                            <option value="right">Right</option>
-                            <option value="center" selected>Center</option>
-                            <option value="justify">Justify</option>
-                        </select>
-                    </div>
+                <!-- Konten Header Style -->
+                <div class="tab-content hidden" data-content="headerStyle">
                 </div>
 
                 <!-- Tab Paper Settings -->
