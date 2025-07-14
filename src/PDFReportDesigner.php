@@ -69,8 +69,32 @@ class PDFReportDesigner
     }
     public function setHeaderStyle(array $headerStyle): void
     {
+        // Ambil background-color dari bodyStyle
+        $bgColor = $this->parseStyleStringToArray($this->bodyStyle)['background-color'] ?? '#ffffff';
+
+        if (isset($headerStyle['rows']) && is_array($headerStyle['rows'])) {
+            foreach ($headerStyle['rows'] as $i => $row) {
+                foreach ($row as $j => $cell) {
+                    if (isset($cell['styles']) && is_array($cell['styles'])) {
+                        // Modifikasi semua border menjadi warna background
+                        $cellStyles = $cell['styles'];
+
+                        $borderKeys = ['border', 'border-top', 'border-right', 'border-bottom', 'border-left'];
+                        foreach ($borderKeys as $key) {
+                            if (isset($cellStyles[$key])) {
+                                $cellStyles[$key] = '1px solid ' . $bgColor;
+                            }
+                        }
+
+                        $headerStyle['rows'][$i][$j]['styles'] = $cellStyles;
+                    }
+                }
+            }
+        }
+
         $this->headerStyle = $headerStyle;
     }
+
 
     public function setCustomHeaders(array $headers): void
     {
@@ -198,13 +222,21 @@ class PDFReportDesigner
                     $content = $this->replacePlaceholders($cell['content'] ?? '');
                     $colspan = isset($cell['colspan']) ? 'colspan="' . $cell['colspan'] . '"' : '';
                     $rowspan = isset($cell['rowspan']) ? 'rowspan="' . $cell['rowspan'] . '"' : '';
+
+                    // Ambil style dari array + tambahan width/height jika ada
                     $styles = isset($cell['styles']) ? $this->styleArrayToString($cell['styles']) : '';
-                    $html .= "<td $colspan $rowspan style='$styles'><$tag>" . htmlspecialchars($content) . "</$tag></td>";
+                    $width = isset($cell['width']) ? 'width: ' . $cell['width'] . ';' : '';
+                    $height = isset($cell['height']) ? 'height: ' . $cell['height'] . ';' : '';
+
+                    $combinedStyles = $width . $height . $styles;
+
+                    $html .= "<td $colspan $rowspan style='$combinedStyles'><$tag>" . htmlspecialchars($content) . "</$tag></td>";
                 }
                 $html .= '</tr>';
             }
             $html .= '</table>';
         }
+
 
         // Tabel Data
         $html .= '<table style="' . $this->tableStyle . '">';

@@ -157,6 +157,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         tag: "div",
                         colspan: 1,
                         rowspan: 1,
+                        width: 120,
+                        height: 40,
                         styles: {
                             "border": "1px solid #000",
                             "padding": "5px",
@@ -168,6 +170,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         tag: "div",
                         colspan: 1,
                         rowspan: 1,
+                        width: 120,
+                        height: 40,
                         styles: {
                             "border": "1px solid #000",
                             "padding": "5px",
@@ -179,6 +183,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         tag: "div",
                         colspan: 1,
                         rowspan: 1,
+                        width: 120,
+                        height: 40,
                         styles: {
                             "border": "1px solid #000",
                             "padding": "5px",
@@ -192,6 +198,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         tag: "div",
                         colspan: 1,
                         rowspan: 1,
+                        width: 120,
+                        height: 40,
                         styles: {
                             "border": "1px solid #000",
                             "padding": "5px",
@@ -203,6 +211,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         tag: "div",
                         colspan: 1,
                         rowspan: 1,
+                        width: 120,
+                        height: 40,
                         styles: {
                             "border": "1px solid #000",
                             "padding": "5px",
@@ -214,6 +224,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         tag: "div",
                         colspan: 1,
                         rowspan: 1,
+                        width: 120,
+                        height: 40,
                         styles: {
                             "border": "1px solid #000",
                             "padding": "5px",
@@ -243,7 +255,56 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     })();
 
-
+    function buildHeaderStyleFromDOM(tableId = "table_header_style") {
+        const table = document.getElementById(tableId);
+        const headerStyle = { rows: [] };
+    
+        if (!table) return headerStyle;
+    
+        const rows = table.querySelectorAll("tr");
+        rows.forEach(tr => {
+            const row = [];
+            const cells = tr.querySelectorAll("td");
+    
+            cells.forEach(td => {
+                const tag = td.dataset.tag || 'div';
+                const colspan = parseInt(td.getAttribute('colspan')) || 1;
+                const rowspan = parseInt(td.getAttribute('rowspan')) || 1;
+                const width = td.offsetWidth;
+                const height = td.offsetHeight;
+    
+                // Ambil style inline
+                const styleObj = {};
+                td.style.cssText.split(';').forEach(rule => {
+                    if (rule.includes(':')) {
+                        const [key, value] = rule.split(':');
+                        styleObj[key.trim()] = value.trim();
+                    }
+                });
+    
+                // Salin isi TD tanpa elemen-elemen tombol
+                const tempClone = td.cloneNode(true);
+                tempClone.querySelectorAll(".drag-handle, .btn-remove-cell, .btn-add-cell, button, .btn-add, .btn-delete").forEach(el => el.remove());
+    
+                const content = tempClone.textContent.trim();
+    
+                row.push({
+                    content,
+                    tag,
+                    colspan,
+                    rowspan,
+                    width,
+                    height,
+                    styles: styleObj
+                });
+            });
+    
+            headerStyle.rows.push(row);
+        });
+    
+        return headerStyle;
+    }
+    
 
     function normalizeStyleValue(attr, value) {
         // Properti yang perlu satuan px otomatis
@@ -389,15 +450,15 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="generatorPDF">
                 ${renderHeaderTable()}
                 <table class="generatorPDF-table" id="table_resizeable">
-                    <thead>
+                    <thead id="table_header_tableStyle">
                         <tr>
                             ${headers.map(header => {
-            const customHeader = manager.selectors[`header_${header}`]?.content || header;
-            return `<th id="header_${header}" contentEditable="true" class="generatorPDF-th">${customHeader}</th>`;
-        }).join('')}
+                                const customHeader = manager.selectors[`header_${header}`]?.content || header;
+                                return `<th id="header_${header}" contentEditable="true" class="generatorPDF-th">${customHeader}</th>`;
+                            }).join('')}
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="table_data_body">
                         ${data.map(row => `
                             <tr>
                                 ${headers.map(header => `
@@ -412,6 +473,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
             </div>
         `;
+
 
         previewEl.innerHTML = html;
 
@@ -585,10 +647,10 @@ document.addEventListener("DOMContentLoaded", () => {
     function injectHeaderCellControls(tableId = "table_header_style") {
         const table = document.getElementById(tableId);
         if (!table) return;
-
+    
         // Hapus semua tombol lama
         table.querySelectorAll(".cell-control-button, .add-popover").forEach(el => el.remove());
-
+    
         // Inject style global sekali saja
         if (!document.getElementById("cell-control-style")) {
             const style = document.createElement("style");
@@ -650,7 +712,7 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
             document.head.appendChild(style);
         }
-
+    
         const createBtn = (text, title, cls, onClick) => {
             const btn = document.createElement("button");
             btn.textContent = text;
@@ -662,18 +724,18 @@ document.addEventListener("DOMContentLoaded", () => {
             });
             return btn;
         };
-
+    
         const createAddPopover = (td, rowIndex, cellIndex) => {
             const popover = document.createElement("div");
             popover.className = "add-popover";
-
+    
             const directions = [
                 { dir: "↑", title: "Tambah Baris di Atas", action: () => addRow(rowIndex) },
                 { dir: "←", title: "Tambah Cell Kiri", action: () => addCell(rowIndex, cellIndex, "left") },
                 { dir: "→", title: "Tambah Cell Kanan", action: () => addCell(rowIndex, cellIndex, "right") },
                 { dir: "↓", title: "Tambah Baris di Bawah", action: () => addRow(rowIndex + 1) },
             ];
-
+    
             directions.forEach(({ dir, title, action }) => {
                 const btn = document.createElement("button");
                 btn.textContent = dir;
@@ -684,12 +746,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
                 popover.appendChild(btn);
             });
-
+    
             td.appendChild(popover);
             popover.style.top = "20px";
             popover.style.left = "20px";
         };
-
+    
         const defaultCell = () => ({
             tag: "div",
             content: "Baru",
@@ -699,7 +761,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 "text-align": "center"
             }
         });
-
+    
         const createNewCellElement = () => {
             const td = document.createElement("td");
             td.style.position = "relative";
@@ -708,52 +770,50 @@ document.addEventListener("DOMContentLoaded", () => {
             td.innerHTML = `<div contenteditable="true">Baru</div>`;
             return td;
         };
-
+    
         const addCell = (rowIdx, cellIdx, position) => {
             const tr = table.rows[rowIdx];
             if (!tr) return;
-
+    
             const refCell = tr.cells[cellIdx];
             const newCell = createNewCellElement();
-
+    
             if (position === "left") tr.insertBefore(newCell, refCell);
             else tr.insertBefore(newCell, refCell.nextSibling);
-
-            // Update styleGroups
+    
             const base = styleGroups.headerStyle?.rows?.[rowIdx]?.[cellIdx] || defaultCell();
             const clone = JSON.parse(JSON.stringify(base));
             clone.content = "Baru";
             const insertIndex = position === "left" ? cellIdx : cellIdx + 1;
             styleGroups.headerStyle.rows[rowIdx].splice(insertIndex, 0, clone);
-
+    
             injectHeaderCellControls(tableId);
             enableHeaderDragAndDrop(tableId);
             makeTableResizable(table);
         };
-
+    
         const addRow = (rowIdx) => {
             const newRow = document.createElement("tr");
             const newCell = createNewCellElement();
             newRow.appendChild(newCell);
-
+    
             const refRow = table.rows[rowIdx];
             if (refRow) table.tBodies[0].insertBefore(newRow, refRow);
             else table.tBodies[0].appendChild(newRow);
-
+    
             const newRowData = [defaultCell()];
             styleGroups.headerStyle.rows.splice(rowIdx, 0, newRowData);
-
+    
             injectHeaderCellControls(tableId);
             enableHeaderDragAndDrop(tableId);
             makeTableResizable(table);
         };
-
-        // Loop semua cell dan inject tombol
+    
+        // Inject tombol hapus dan tambah ke setiap cell
         table.querySelectorAll("tr").forEach((tr, rowIndex) => {
             tr.querySelectorAll("td").forEach((td, cellIndex) => {
                 td.style.position = "relative";
-
-                // Tombol hapus
+    
                 const btnDel = createBtn("×", "Hapus Cell", "cell-control-del", () => {
                     tr.removeChild(td);
                     if (styleGroups.headerStyle?.rows?.[rowIndex]) {
@@ -766,8 +826,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 td.appendChild(btnDel);
                 btnDel.style.top = "0";
                 btnDel.style.left = "0";
-
-                // Tombol tambah
+    
                 const btnAdd = createBtn("+", "Tambah", "cell-control-add", () => {
                     const existingPopover = td.querySelector(".add-popover");
                     table.querySelectorAll(".add-popover").forEach(p => p.remove());
@@ -780,8 +839,47 @@ document.addEventListener("DOMContentLoaded", () => {
                 btnAdd.style.right = "0";
             });
         });
+    
+        // Jika semua cell kosong, tampilkan tombol tambah pertama
+        const isEmpty = !styleGroups.headerStyle?.rows?.length || styleGroups.headerStyle.rows.every(row => !row.length);
+        if (isEmpty) {
+            const tbody = table.querySelector("tbody") || table.createTBody();
+            tbody.innerHTML = '';
+    
+            const tr = document.createElement("tr");
+            const td = document.createElement("td");
+            td.colSpan = 100;
+            td.style.position = "relative";
+            td.style.width = "120px";
+            td.style.height = "50px";
+            td.style.border = "1px solid #ccc";
+            td.style.verticalAlign = "middle";
+            td.style.textAlign = "center";
+            td.style.padding = "0";
+    
+            const btnAddFirst = document.createElement("button");
+            btnAddFirst.textContent = "+ Tambah Cell Pertama";
+            btnAddFirst.style.width = "100%";
+            btnAddFirst.style.height = "100%";
+            btnAddFirst.style.border = "none";
+            btnAddFirst.style.background = "none";
+            btnAddFirst.style.cursor = "pointer";
+            btnAddFirst.style.color = "#28a745";
+            btnAddFirst.style.fontWeight = "bold";
+    
+            btnAddFirst.addEventListener("click", () => {
+                addRow(0);
+                tr.remove(); // ✅ Hapus tombol saat ditekan
+            });
+    
+            td.appendChild(btnAddFirst);
+            tr.appendChild(td);
+            tbody.appendChild(tr);
+        }
     }
-
+    
+    
+    
 
 
     // Tombol tambah selector
@@ -908,6 +1006,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const metaAuthor = getValue(selectorVars.metaAuthor);
         const metaSubject = getValue(selectorVars.metaSubject);
         const footer = getValue(selectorVars.footer);
+        const updatedHeaderStyle = buildHeaderStyleFromDOM("table_header_style");
 
         // Ambil header hasil edit yang dinamakan "header_<field>"
         const customHeaders = {};
@@ -923,7 +1022,7 @@ document.addEventListener("DOMContentLoaded", () => {
             rowTableStyle: encodeURIComponent(JSON.stringify(styleGroups.rowTableStyle || {})),
             tableStyle: encodeURIComponent(JSON.stringify(styleGroups.tableStyle || {})),
             bodyStyle: encodeURIComponent(JSON.stringify(styleGroups.bodyStyle || {})),
-            headerStyle: encodeURIComponent(JSON.stringify(styleGroups.headerStyle || {})),
+            headerStyle: encodeURIComponent(JSON.stringify(updatedHeaderStyle)),
             paperSize,
             paperOrientation,
             metaTitle,
@@ -1060,6 +1159,7 @@ document.addEventListener("DOMContentLoaded", () => {
             styleGroups.tableStyle = template.tableStyle || {};
             styleGroups.columnWidths = template.columnWidths || [];
             styleGroups.bodyStyle = template.bodyStyle || [];
+            styleGroups.headerStyle = template.headerStyle || [];
             // Apply style ke form input jika pakai input form style
             if (typeof applyStyleGroupsToForm === 'function') {
                 applyStyleGroupsToForm();
@@ -1125,104 +1225,145 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function makeTableResizable(table) {
         const cols = table.querySelectorAll("th, td");
-
+    
         cols.forEach((col, index) => {
             col.style.position = "relative";
-
-            // Wrapper transparan untuk meletakkan resizer
+    
             const wrapper = document.createElement("div");
             wrapper.style.position = "absolute";
             wrapper.style.top = "0";
             wrapper.style.left = "0";
             wrapper.style.right = "0";
             wrapper.style.bottom = "0";
-            wrapper.style.pointerEvents = "none"; // penting agar isi cell tetap interaktif
+            wrapper.style.pointerEvents = "none";
             col.appendChild(wrapper);
-
-            // ===== Resizer Horizontal (kanan) =====
+    
             const resizerRight = document.createElement("div");
             resizerRight.style.position = "absolute";
             resizerRight.style.top = "0";
-            resizerRight.style.right = "-2px"; // posisi tepat di garis kanan
-            resizerRight.style.width = "4px"; // DIPERKECIL
+            resizerRight.style.right = "-2px";
+            resizerRight.style.width = "4px";
             resizerRight.style.height = "100%";
             resizerRight.style.cursor = "col-resize";
             resizerRight.style.zIndex = "1000";
             resizerRight.style.pointerEvents = "auto";
             wrapper.appendChild(resizerRight);
-
-            // ===== Resizer Vertikal (bawah) =====
+    
             const resizerBottom = document.createElement("div");
             resizerBottom.style.position = "absolute";
-            resizerBottom.style.bottom = "-2px"; // posisi tepat di garis bawah
+            resizerBottom.style.bottom = "-2px";
             resizerBottom.style.left = "0";
             resizerBottom.style.width = "100%";
-            resizerBottom.style.height = "4px"; // DIPERKECIL
+            resizerBottom.style.height = "4px";
             resizerBottom.style.cursor = "row-resize";
             resizerBottom.style.zIndex = "1000";
             resizerBottom.style.pointerEvents = "auto";
-            wrapper.appendChild(resizerBottom);
-
+    
+            // Hanya tambahkan resizer height jika bukan dari tbody (data body)
+            const isHeaderCell = !col.closest("tbody#table_data_body");
+            if (isHeaderCell) {
+                wrapper.appendChild(resizerBottom);
+            }
+    
             let startX, startY, startWidth, startHeight, tableWidth;
-
-            // === Resize Lebar Kolom ===
+    
             resizerRight.addEventListener("mousedown", function (e) {
                 PDFDesigner.isResizing = true;
                 startX = e.pageX;
                 startWidth = col.offsetWidth;
                 tableWidth = table.offsetWidth;
-
+    
                 document.addEventListener("mousemove", onMouseMoveWidth);
                 document.addEventListener("mouseup", onMouseUpWidth);
             });
-
+    
             function onMouseMoveWidth(e) {
                 const delta = e.pageX - startX;
                 let newWidthPx = startWidth + delta;
                 const minWidthPx = tableWidth * 0.01;
                 if (newWidthPx < minWidthPx) newWidthPx = minWidthPx;
                 const newWidthPercent = (newWidthPx / tableWidth) * 100;
-
+    
                 col.style.width = `${newWidthPercent}%`;
-
-                if (!styleGroups.columnWidths) styleGroups.columnWidths = [];
-                styleGroups.columnWidths[index] = `${newWidthPercent.toFixed(2)}%`;
+    
+                if (table.id === "table_header_style") {
+                    const cellIndex = Array.from(cols).indexOf(col);
+                    let rowIndex = 0, colIndex = 0, counter = 0;
+                    outer: for (let i = 0; i < styleGroups.headerStyle.rows.length; i++) {
+                        for (let j = 0; j < styleGroups.headerStyle.rows[i].length; j++) {
+                            if (counter === cellIndex) {
+                                rowIndex = i;
+                                colIndex = j;
+                                break outer;
+                            }
+                            counter++;
+                        }
+                    }
+                    const cell = styleGroups.headerStyle.rows?.[rowIndex]?.[colIndex];
+                    if (cell) {
+                        cell.width = `${newWidthPx}px`;
+                    }
+                } else {
+                    if (!styleGroups.columnWidths) styleGroups.columnWidths = [];
+                    styleGroups.columnWidths[index] = `${newWidthPercent.toFixed(2)}%`;
+                }
             }
-
+    
             function onMouseUpWidth() {
                 PDFDesigner.isResizing = false;
                 document.removeEventListener("mousemove", onMouseMoveWidth);
                 document.removeEventListener("mouseup", onMouseUpWidth);
             }
-
-            // === Resize Tinggi Baris ===
-            resizerBottom.addEventListener("mousedown", function (e) {
-                PDFDesigner.isResizing = true;
-                startY = e.pageY;
-                startHeight = col.offsetHeight;
-
-                document.addEventListener("mousemove", onMouseMoveHeight);
-                document.addEventListener("mouseup", onMouseUpHeight);
-            });
-
-            function onMouseMoveHeight(e) {
-                const delta = e.pageY - startY;
-                let newHeightPx = startHeight + delta;
-                if (newHeightPx < 10) newHeightPx = 10;
-
-                col.style.height = `${newHeightPx}px`;
-
-                if (!styleGroups.haderTableStyle) styleGroups.haderTableStyle = {};
-                styleGroups.haderTableStyle['height'] = `${newHeightPx}px`;
-            }
-
-            function onMouseUpHeight() {
-                PDFDesigner.isResizing = false;
-                document.removeEventListener("mousemove", onMouseMoveHeight);
-                document.removeEventListener("mouseup", onMouseUpHeight);
+    
+            // Hanya pasang event untuk resize height jika cell bukan di tbody
+            if (isHeaderCell) {
+                resizerBottom.addEventListener("mousedown", function (e) {
+                    PDFDesigner.isResizing = true;
+                    startY = e.pageY;
+                    startHeight = col.offsetHeight;
+    
+                    document.addEventListener("mousemove", onMouseMoveHeight);
+                    document.addEventListener("mouseup", onMouseUpHeight);
+                });
+    
+                function onMouseMoveHeight(e) {
+                    const delta = e.pageY - startY;
+                    let newHeightPx = startHeight + delta;
+                    if (newHeightPx < 10) newHeightPx = 10;
+    
+                    col.style.height = `${newHeightPx}px`;
+    
+                    if (table.id === "table_header_style") {
+                        const cellIndex = Array.from(cols).indexOf(col);
+                        let rowIndex = 0, colIndex = 0, counter = 0;
+                        outer: for (let i = 0; i < styleGroups.headerStyle.rows.length; i++) {
+                            for (let j = 0; j < styleGroups.headerStyle.rows[i].length; j++) {
+                                if (counter === cellIndex) {
+                                    rowIndex = i;
+                                    colIndex = j;
+                                    break outer;
+                                }
+                                counter++;
+                            }
+                        }
+                        const cell = styleGroups.headerStyle.rows?.[rowIndex]?.[colIndex];
+                        if (cell) {
+                            cell.height = `${newHeightPx}px`;
+                        }
+                    } else {
+                        if (!styleGroups.haderTableStyle) styleGroups.haderTableStyle = {};
+                        styleGroups.haderTableStyle['height'] = `${newHeightPx}px`;
+                    }
+                }
+    
+                function onMouseUpHeight() {
+                    PDFDesigner.isResizing = false;
+                    document.removeEventListener("mousemove", onMouseMoveHeight);
+                    document.removeEventListener("mouseup", onMouseUpHeight);
+                }
             }
         });
-    }
+    }    
 
 
     function applyColumnWidths(table) {
