@@ -175,7 +175,6 @@ function buildDesignerFromRequest(): PDFReportDesigner {
     $columnWidths = isset($_GET['columnWidths']) ? json_decode(urldecode($_GET['columnWidths']), true) : [];
     $headerStyle = json_decode(urldecode($_GET['headerStyle']), true);
     $bodyStyle = getStyleFromQuery('bodyStyle', 'margin: 20px; padding: 20px; box-sizing: border-box; font-family: Arial, sans-serif; background-color: #ffffff;');
-
     $customHeaders = [];
     if (isset($_GET['headers'])) {
         $decoded = json_decode(urldecode($_GET['headers']), true);

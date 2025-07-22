@@ -49,7 +49,48 @@ require_once __DIR__ . '/public/download2.php';
             <div class="w-full bg-white p-4 border-b space-y-4">
                 <!-- Konten Header Style -->
                 <div class="tab-content hidden" data-content="headerStyle">
+                    <div class="col-span-1">
+                        <label class="block text-sm font-medium">Font Size</label>
+                        <input type="number" class="w-full mt-1 p-2 border rounded" value="16"
+                            data-style-group="headerStyleCell" data-style-attr="font-size">
+                    </div>
+                    <div class="col-span-1">
+                        <label class="block text-sm font-medium">Font Weight</label>
+                        <select class="w-full mt-1 p-2 border rounded" data-style-group="headerStyleCell"
+                            data-style-attr="font-weight">
+                            <option value="100">100 - Thin</option>
+                            <option value="200">200 - Extra Light</option>
+                            <option value="300">300 - Light</option>
+                            <option value="400">400 - Normal</option>
+                            <option value="500">500 - Medium</option>
+                            <option value="600">600 - Semi Bold</option>
+                            <option value="700" selected>700 - Bold</option>
+                            <option value="800">800 - Extra Bold</option>
+                            <option value="900">900 - Black</option>
+                        </select>
+                    </div>
+                    <div class="col-span-1">
+                        <label class="block text-sm font-medium">Text Align</label>
+                        <select class="w-full mt-1 p-2 border rounded" data-style-group="headerStyleCell"
+                            data-style-attr="text-align">
+                            <option value="left">Left</option>
+                            <option value="right">Right</option>
+                            <option value="center">Center</option>
+                            <option value="justify">Justify</option>
+                        </select>
+                    </div>
+                    <div class="col-span-1">
+                        <label class="block text-sm font-medium">Background Color</label>
+                        <input type="color" class="w-full mt-1 p-2 border rounded" value="#ffffff"
+                            data-style-group="headerStyleCell" data-style-attr="background-color">
+                    </div>
+                    <div class="col-span-1">
+                        <label class="block text-sm font-medium">Font Color</label>
+                        <input type="color" class="w-full mt-1 p-2 border rounded" value="#000000"
+                            data-style-group="headerStyleCell" data-style-attr="color">
+                    </div>
                 </div>
+
 
                 <!-- Tab Paper Settings -->
                 <div class="tab-content hidden" data-content="paperSettings">
@@ -112,7 +153,7 @@ require_once __DIR__ . '/public/download2.php';
                             data-style-group="bodyStyle" data-style-attr="margin-left">
                     </div>
                 </div>
-                <!-- Tab Header Style -->
+                <!-- Tab Header Table Style -->
                 <div class="tab-content hidden" data-content="haderTableStyle">
                     <div>
                         <label class="block text-sm font-medium">Font Size</label>

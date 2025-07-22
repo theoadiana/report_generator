@@ -2,7 +2,7 @@
 
 class PDFReportDesigner
 {
-    private string $haderTableStyle = 'font-size: 14px; font-weight: bold; color: #000000; text-align: center; background-color: #ffffff; border: 1px solid #000000; padding: 8px;';
+    private string $headerTableStyle = 'font-size: 14px; font-weight: bold; color: #000000; text-align: center; background-color: #ffffff; border: 1px solid #000000; padding: 8px;';
     private string $rowTableStyle = 'font-size: 12px; font-weight: normal; color: #000000; text-align: left; background-color: #f9f9f9; border: 1px solid #000000; padding: 6px;';
     private string $tableStyle = 'width: 100%; border-collapse: collapse; margin-top: 20px; margin-bottom: 20px; table-layout: fixed; word-wrap: break-word;';
     private string $fontStyle = 'font-family: Arial, sans-serif;';
@@ -21,9 +21,9 @@ class PDFReportDesigner
     private string $metaAuthor = '';
     private string $metaSubject = '';
 
-    public function setHeaderTableStyle(string $haderTableStyle): void
+    public function setHeaderTableStyle(string $headerTableStyle): void
     {
-        $this->haderTableStyle = $haderTableStyle;
+        $this->headerTableStyle = $headerTableStyle;
     }
 
     public function setRowTableStyle(string $rowTableStyle): void
@@ -68,32 +68,44 @@ class PDFReportDesigner
         $this->columnWidths = $widths;
     }
     public function setHeaderStyle(array $headerStyle): void
-    {
-        // Ambil background-color dari bodyStyle
-        $bgColor = $this->parseStyleStringToArray($this->bodyStyle)['background-color'] ?? '#ffffff';
+{
+    // Ambil background-color dari bodyStyle
+    $bgColor = $this->parseStyleStringToArray($this->bodyStyle)['background-color'] ?? '#ffffff';
 
-        if (isset($headerStyle['rows']) && is_array($headerStyle['rows'])) {
-            foreach ($headerStyle['rows'] as $i => $row) {
-                foreach ($row as $j => $cell) {
-                    if (isset($cell['styles']) && is_array($cell['styles'])) {
-                        // Modifikasi semua border menjadi warna background
-                        $cellStyles = $cell['styles'];
+    if (isset($headerStyle['rows']) && is_array($headerStyle['rows'])) {
+        foreach ($headerStyle['rows'] as $i => $row) {
+            foreach ($row as $j => $cell) {
+                if (isset($cell['styles']) && is_array($cell['styles'])) {
+                    $cellStyles = [];
 
-                        $borderKeys = ['border', 'border-top', 'border-right', 'border-bottom', 'border-left'];
-                        foreach ($borderKeys as $key) {
-                            if (isset($cellStyles[$key])) {
-                                $cellStyles[$key] = '1px solid ' . $bgColor;
-                            }
+                    foreach ($cell['styles'] as $key => $value) {
+                        // Lewati properti yang tidak diinginkan
+                        if (in_array($key, ['display'])) {
+                            continue;
                         }
 
-                        $headerStyle['rows'][$i][$j]['styles'] = $cellStyles;
+                        // Ubah border jadi 1px solid warna bodyStyle
+                        if (in_array($key, ['border', 'border-top', 'border-right', 'border-bottom', 'border-left'])) {
+                            // $cellStyles[$key] = '1px solid ' . $bgColor;
+                        } else {
+                            $cellStyles[$key] = $value;
+                        }
                     }
+
+                    // Tambahkan vertical-align: top jika belum ada
+                    if (!isset($cellStyles['vertical-align'])) {
+                        $cellStyles['vertical-align'] = 'top';
+                    }
+
+                    $headerStyle['rows'][$i][$j]['styles'] = $cellStyles;
                 }
             }
         }
-
-        $this->headerStyle = $headerStyle;
     }
+
+    $this->headerStyle = $headerStyle;
+}
+
 
 
     public function setCustomHeaders(array $headers): void
@@ -191,54 +203,91 @@ class PDFReportDesigner
         $footerText = addslashes($this->replacePlaceholders($this->footer));
 
         $html = '<html><head>
-        <meta name="title" content="' . htmlspecialchars($this->metaTitle) . '">
-        <meta name="author" content="' . htmlspecialchars($this->metaAuthor) . '">
-        <meta name="subject" content="' . htmlspecialchars($this->metaSubject) . '">
-        <style>
-            body { ' . $this->bodyStyle . ' }
-            @page {
-                margin: -20px;
-            }
-            table {
-                width: 100%;
-                table-layout: fixed;
-                border-collapse: collapse;
-                word-wrap: break-word;
-            }
-            th, td {
-                max-width: 100%;
-                border: 1px solid #000;
-            }
-        </style>
-    </head><body>';
+                <meta name="title" content="' . htmlspecialchars($this->metaTitle) . '">
+                <meta name="author" content="' . htmlspecialchars($this->metaAuthor) . '">
+                <meta name="subject" content="' . htmlspecialchars($this->metaSubject) . '">
+                <style>
+                    body { ' . $this->bodyStyle . ' }
+                    @page {
+                        margin: -20px;
+                    }
+                    table {
+                        width: 100%;
+                        table-layout: fixed;
+                        border-collapse: collapse;
+                        word-wrap: break-word;
+                    }
+                    th, td {
+                        max-width: 100%;
+                        border: 1px solid #000;
+                        box-sizing: border-box;
+                        overflow: hidden;
+                    }
+                    td > * {
+                        display: block;
+                        text-align: center;
+                    }
+                </style>
+            </head><body>';
 
-        // Header Style
+        // HEADER STYLE SECTION
         if (!empty($this->headerStyle['rows']) && is_array($this->headerStyle['rows'])) {
-            $html .= '<table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">';
+            // Hitung total kolom maksimum (untuk fallback distribusi width)
+            $maxCols = 0;
+            foreach ($this->headerStyle['rows'] as $row) {
+                $colCount = 0;
+                foreach ($row as $cell) {
+                    $colspan = isset($cell['colspan']) ? (int) $cell['colspan'] : 1;
+                    $colCount += $colspan;
+                }
+                if ($colCount > $maxCols) {
+                    $maxCols = $colCount;
+                }
+            }
+
+            $html .= '<table style="width: 100%; border-collapse: collapse;">';
+
             foreach ($this->headerStyle['rows'] as $row) {
                 $html .= '<tr>';
                 foreach ($row as $cell) {
                     $tag = $cell['tag'] ?? 'div';
                     $content = $this->replacePlaceholders($cell['content'] ?? '');
-                    $colspan = isset($cell['colspan']) ? 'colspan="' . $cell['colspan'] . '"' : '';
-                    $rowspan = isset($cell['rowspan']) ? 'rowspan="' . $cell['rowspan'] . '"' : '';
+                    $colspanVal = $cell['colspan'] ?? 1;
+                    $rowspanVal = $cell['rowspan'] ?? 1;
 
-                    // Ambil style dari array + tambahan width/height jika ada
-                    $styles = isset($cell['styles']) ? $this->styleArrayToString($cell['styles']) : '';
-                    $width = isset($cell['width']) ? 'width: ' . $cell['width'] . ';' : '';
+                    $colspan = $colspanVal > 1 ? 'colspan="' . $colspanVal . '"' : '';
+                    $rowspan = $rowspanVal > 1 ? 'rowspan="' . $rowspanVal . '"' : '';
+
+                    // Handle style
+                    $styles = $cell['styles'] ?? [];
+
+                    // Remove conflicting keys if width/height is separately defined
+                    unset($styles['width'], $styles['height']);
+
+                    // Convert styles array to string
+                    $styleStr = $this->styleArrayToString($styles);
+
+                    // Calculate or use defined width
+                    if (isset($cell['width'])) {
+                        $width = 'width: ' . $cell['width'] . ';';
+                    } else {
+                        $widthPercent = round(($colspanVal / $maxCols) * 100, 2);
+                        $width = "width: {$widthPercent}%;";
+                    }
+
                     $height = isset($cell['height']) ? 'height: ' . $cell['height'] . ';' : '';
 
-                    $combinedStyles = $width . $height . $styles;
+                    $combinedStyles = $width . $height . $styleStr;
 
                     $html .= "<td $colspan $rowspan style='$combinedStyles'><$tag>" . htmlspecialchars($content) . "</$tag></td>";
                 }
                 $html .= '</tr>';
             }
+
             $html .= '</table>';
         }
 
-
-        // Tabel Data
+        // DATA TABLE SECTION
         $html .= '<table style="' . $this->tableStyle . '">';
         $columns = array_keys($data[0]);
 
@@ -248,11 +297,11 @@ class PDFReportDesigner
             $customLabel = $this->customHeaders[$column] ?? $column;
             $width = $this->columnWidths[$index] ?? null;
             $widthStyle = $width ? "width: $width;" : "";
-            $html .= '<th style="' . $widthStyle . $this->haderTableStyle . '">' . htmlspecialchars($customLabel) . '</th>';
+            $html .= '<th style="' . $widthStyle . $this->headerTableStyle . '">' . htmlspecialchars($customLabel) . '</th>';
         }
         $html .= '</tr></thead>';
 
-        // Data
+        // Data rows
         $html .= '<tbody>';
         foreach ($data as $row) {
             $html .= '<tr>';
@@ -266,37 +315,41 @@ class PDFReportDesigner
         }
         $html .= '</tbody>';
 
-        // Footer tabel (jika ada)
+        // Optional footer row
         if (!empty($this->footer)) {
             $html .= '<tfoot><tr><td colspan="' . count($columns) . '" style="text-align: center; font-weight: bold;">' . htmlspecialchars($this->replacePlaceholders($this->footer)) . '</td></tr></tfoot>';
         }
 
         $html .= '</table>';
 
-        // Footer PDF (nomor halaman)
+        // Footer script (nomor halaman)
         $html .= '
-        <script type="text/php">
-            if (isset($pdf)) {
-                $pdf->page_script(function ($pageNumber, $pageCount, $pdf) {
-                    $font = $pdf->getFontMetrics()->getFont("Helvetica", "normal");
-                    $text = "' . $footerText . ' - Halaman $pageNumber dari $pageCount";
-                    $width = $pdf->get_width();
-                    $textWidth = $pdf->getFontMetrics()->getTextWidth($text, $font, 10);
-                    $x = ($width - $textWidth) / 2;
-                    $pdf->text($x, 820, $text, $font, 10);
-                });
-            }
-        </script>';
+    <script type="text/php">
+        if (isset($pdf)) {
+            $pdf->page_script(function ($pageNumber, $pageCount, $pdf) {
+                $font = $pdf->getFontMetrics()->getFont("Helvetica", "normal");
+                $text = "' . $footerText . ' - Halaman $pageNumber dari $pageCount";
+                $width = $pdf->get_width();
+                $textWidth = $pdf->getFontMetrics()->getTextWidth($text, $font, 10);
+                $x = ($width - $textWidth) / 2;
+                $pdf->text($x, 820, $text, $font, 10);
+            });
+        }
+    </script>';
 
         $html .= '</body></html>';
+        echo2file($html);
         return $html;
     }
+
+
+
 
     public function getTemplateAsArray(): array
     {
         return [
             'query' => $this->query,
-            'haderTableStyle' => $this->parseStyleStringToArray($this->haderTableStyle),
+            'headerTableStyle' => $this->parseStyleStringToArray($this->headerTableStyle),
             'rowTableStyle' => $this->parseStyleStringToArray($this->rowTableStyle),
             'tableStyle' => $this->parseStyleStringToArray($this->tableStyle),
             'fontStyle' => $this->fontStyle,

@@ -8,6 +8,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const loadTemplateButton = document.getElementById("report_generator_loadTemplatePDF");
     const queryExecuteButton = document.getElementById("report_generator_queryExecute");
     let cachedData = [];
+    toggleHeaderStyleInputs(false);
+    toggleFooterStyleInputs(false);
     const PDFDesigner = {
         isResizing: false,
         getSelectorValues() {
@@ -84,7 +86,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
 
-
     // Registrasi default
     [
         "paperSize",
@@ -103,7 +104,6 @@ document.addEventListener("DOMContentLoaded", () => {
     ].forEach((id) => manager.register(id));
 
     const selectorVars = manager.generateSelectorVariables();
-
     const styleGroups = {
         haderTableStyle: {
             'font-size': '14px',
@@ -158,11 +158,13 @@ document.addEventListener("DOMContentLoaded", () => {
                         colspan: 1,
                         rowspan: 1,
                         width: 120,
-                        height: 40,
+                        height: 25,
                         styles: {
-                            "border": "1px solid #000",
-                            "padding": "5px",
-                            "text-align": "center"
+                            "text-align": "center",
+                            "font-size": "16px",
+                            "font-weight": "700",
+                            "background-color": "#ffffff",
+                            "color": "#000000",
                         }
                     },
                     {
@@ -171,11 +173,13 @@ document.addEventListener("DOMContentLoaded", () => {
                         colspan: 1,
                         rowspan: 1,
                         width: 120,
-                        height: 40,
+                        height: 25,
                         styles: {
-                            "border": "1px solid #000",
-                            "padding": "5px",
-                            "text-align": "center"
+                            "text-align": "center",
+                            "font-size": "16px",
+                            "font-weight": "700",
+                            "background-color": "#ffffff",
+                            "color": "#000000",
                         }
                     },
                     {
@@ -184,11 +188,13 @@ document.addEventListener("DOMContentLoaded", () => {
                         colspan: 1,
                         rowspan: 1,
                         width: 120,
-                        height: 40,
+                        height: 25,
                         styles: {
-                            "border": "1px solid #000",
-                            "padding": "5px",
-                            "text-align": "center"
+                            "text-align": "center",
+                            "font-size": "16px",
+                            "font-weight": "700",
+                            "background-color": "#ffffff",
+                            "color": "#000000",
                         }
                     }
                 ],
@@ -199,11 +205,13 @@ document.addEventListener("DOMContentLoaded", () => {
                         colspan: 1,
                         rowspan: 1,
                         width: 120,
-                        height: 40,
+                        height: 25,
                         styles: {
-                            "border": "1px solid #000",
-                            "padding": "5px",
-                            "text-align": "center"
+                            "text-align": "center",
+                            "font-size": "16px",
+                            "font-weight": "700",
+                            "background-color": "#ffffff",
+                            "color": "#000000",
                         }
                     },
                     {
@@ -212,11 +220,13 @@ document.addEventListener("DOMContentLoaded", () => {
                         colspan: 1,
                         rowspan: 1,
                         width: 120,
-                        height: 40,
+                        height: 25,
                         styles: {
-                            "border": "1px solid #000",
-                            "padding": "5px",
-                            "text-align": "center"
+                            "text-align": "center",
+                            "font-size": "16px",
+                            "font-weight": "700",
+                            "background-color": "#ffffff",
+                            "color": "#000000",
                         }
                     },
                     {
@@ -225,16 +235,20 @@ document.addEventListener("DOMContentLoaded", () => {
                         colspan: 1,
                         rowspan: 1,
                         width: 120,
-                        height: 40,
+                        height: 25,
                         styles: {
-                            "border": "1px solid #000",
-                            "padding": "5px",
-                            "text-align": "center"
+                            "text-align": "center",
+                            "font-size": "16px",
+                            "font-weight": "700",
+                            "background-color": "#ffffff",
+                            "color": "#000000",
                         }
                     }
                 ]
             ]
-        }
+        },
+        
+
 
     };
 
@@ -262,6 +276,14 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!table) return headerStyle;
     
         const rows = table.querySelectorAll("tr");
+    
+        // Hitung total lebar dari baris pertama (anggap sebagai total kolom)
+        let totalWidth = 0;
+        const firstRowCells = rows[0]?.querySelectorAll("td") || [];
+        firstRowCells.forEach(td => {
+            totalWidth += td.offsetWidth || 0;
+        });
+    
         rows.forEach(tr => {
             const row = [];
             const cells = tr.querySelectorAll("td");
@@ -270,10 +292,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 const tag = td.dataset.tag || 'div';
                 const colspan = parseInt(td.getAttribute('colspan')) || 1;
                 const rowspan = parseInt(td.getAttribute('rowspan')) || 1;
-                const width = td.offsetWidth;
-                const height = td.offsetHeight;
+                const widthPx = td.offsetWidth || 0;
+                const heightPx = td.offsetHeight || 0;
     
-                // Ambil style inline
+                // Konversi width ke persen, height tetap dalam px
+                const width = totalWidth
+                    ? ((widthPx / totalWidth) * 100).toFixed(2) + '%'
+                    : 'auto';
+                const height = heightPx + 'px';
+    
+                // Ambil style inline dari td dan elemen anak
                 const styleObj = {};
                 td.style.cssText.split(';').forEach(rule => {
                     if (rule.includes(':')) {
@@ -282,10 +310,19 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 });
     
-                // Salin isi TD tanpa elemen-elemen tombol
+                const inner = td.querySelector("*");
+                if (inner && inner.style) {
+                    inner.style.cssText.split(';').forEach(rule => {
+                        if (rule.includes(':')) {
+                            const [key, value] = rule.split(':');
+                            styleObj[key.trim()] = value.trim();
+                        }
+                    });
+                }
+    
+                // Hapus elemen kontrol dari clone
                 const tempClone = td.cloneNode(true);
                 tempClone.querySelectorAll(".drag-handle, .btn-remove-cell, .btn-add-cell, button, .btn-add, .btn-delete").forEach(el => el.remove());
-    
                 const content = tempClone.textContent.trim();
     
                 row.push({
@@ -305,6 +342,9 @@ document.addEventListener("DOMContentLoaded", () => {
         return headerStyle;
     }
     
+    
+
+
 
     function normalizeStyleValue(attr, value) {
         // Properti yang perlu satuan px otomatis
@@ -343,14 +383,34 @@ document.addEventListener("DOMContentLoaded", () => {
             const attr = input.dataset.styleAttr;
             let value = input.value;
 
-            // Normalisasi nilai jika perlu
+            // Normalisasi satuan, misal px
             value = normalizeStyleValue(attr, value);
 
-            // Simpan ke styleGroups
-            if (!styleGroups[group]) styleGroups[group] = {};
-            styleGroups[group][attr] = value;
+            if (group === 'headerStyleCell') {
+                const selectedTd = document.querySelector("#table_header_style td.selected-td");
+                if (!selectedTd) return;
+
+                const rowIndex = selectedTd.parentElement.rowIndex;
+                const cellIndex = selectedTd.cellIndex;
+
+                const cell = styleGroups.headerStyle?.rows?.[rowIndex]?.[cellIndex];
+                if (!cell) return;
+
+                if (!cell.styles) cell.styles = {};
+                cell.styles[attr] = value;
+
+                // Apply langsung ke elemen di dalam td
+                const inner = selectedTd.querySelector("*");
+                if (inner) inner.style.setProperty(attr, value);
+
+            } else {
+                if (!styleGroups[group]) styleGroups[group] = {};
+                styleGroups[group][attr] = value;
+            }
         });
     }
+
+
 
     function renderPreview(data) {
         const previewEl = document.getElementById("preview");
@@ -364,7 +424,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const values = PDFDesigner.getSelectorValues();
         const headers = Object.keys(data[0]);
-        const bodyBackground = styleGroups.bodyStyle['background-color'] || '#ffffff';
 
         // Placeholder otomatis
         const currentDate = new Date().toISOString().split("T")[0];
@@ -415,16 +474,30 @@ document.addEventListener("DOMContentLoaded", () => {
                 const editableTags = ['span', 'div', 'h1', 'h2', 'h3', 'p'];
                 const editable = editableTags.includes(tag.toLowerCase()) ? 'contentEditable="true"' : '';
 
-                // Ambil style yang dikonfigurasi
-                const styleObj = cell.styles || {};
-                const width = styleObj.width || '120px'; // default width
-                const height = styleObj.height || '50px'; // default height
+                // Ambil style
+                const styleObj = { ...(cell.styles || {}) };
 
-                const tdStyle = `width:${width}; height:${height}; padding:5px; border:1px solid #000; position: relative;`;
+                // Gunakan width/height dari field cell
+                const width = cell.width || styleObj.width;
+                const height = cell.height || styleObj.height;
+
+                // Pastikan background-color dari bodyStyle jika tidak ada
+                if (!styleObj["background-color"]) {
+                    styleObj["background-color"] = styleGroups.bodyStyle?.["background-color"] || "#ffffff";
+                }
+
+                // Bangun inline style untuk tag di dalam <td>
+                const innerStyle = Object.entries(styleObj).map(([key, value]) => {
+                    return `${key}:${value};`;
+                }).join(' ');
+
+                // Style tambahan <td> tetap dipakai
+                const tdStyle = `width:${width}px; height:${height}px; border:1px solid #000; position: relative;`;
 
                 return `<td ${colspan} ${rowspan} style="${tdStyle}">
                                     <${tag} id="${cellId}" ${editable}
                                         style="
+                                            ${innerStyle}
                                             width: 100%;
                                             height: 100%;
                                             box-sizing: border-box;
@@ -444,6 +517,7 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
         }
 
+
         // 🔽 HTML akhir
         let html = `
             ${styleTag}
@@ -453,9 +527,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     <thead id="table_header_tableStyle">
                         <tr>
                             ${headers.map(header => {
-                                const customHeader = manager.selectors[`header_${header}`]?.content || header;
-                                return `<th id="header_${header}" contentEditable="true" class="generatorPDF-th">${customHeader}</th>`;
-                            }).join('')}
+            const customHeader = manager.selectors[`header_${header}`]?.content || header;
+            return `<th id="header_${header}" contentEditable="true" class="generatorPDF-th">${customHeader}</th>`;
+        }).join('')}
                         </tr>
                     </thead>
                     <tbody id="table_data_body">
@@ -526,131 +600,164 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     function enableHeaderDragAndDrop(tableId = "table_header_style") {
-        const table = document.getElementById(tableId);
-        if (!table) return;
-    
-        let dragSrcTd = null;
-    
-        table.querySelectorAll("td").forEach(td => {
-            td.setAttribute("draggable", false);
-            td.style.cursor = "default";
-            td.style.position = "relative";
-    
-            let dragHandle = td.querySelector(".drag-handle");
-            if (!dragHandle) {
-                dragHandle = document.createElement("div");
-                dragHandle.className = "drag-handle";
-                dragHandle.title = "Geser untuk memindahkan cell";
-                dragHandle.innerHTML = "⠿";
-    
-                Object.assign(dragHandle.style, {
-                    position: "absolute",
-                    top: "2px",
-                    right: "2px",
-                    cursor: "move",
-                    fontSize: "12px",
-                    zIndex: 16,
-                    color: "#999",
-                    background: "transparent",
-                    userSelect: "none",
-                    lineHeight: "1"
-                });
-    
-                td.appendChild(dragHandle);
+    const table = document.getElementById(tableId);
+    if (!table) return;
+
+    let dragSrcTd = null;
+
+    table.querySelectorAll("td").forEach(td => {
+        td.setAttribute("draggable", false);
+        td.style.cursor = "default";
+        td.style.position = "relative";
+
+        let dragHandle = td.querySelector(".drag-handle");
+        if (!dragHandle) {
+            dragHandle = document.createElement("div");
+            dragHandle.className = "drag-handle";
+            dragHandle.title = "Geser untuk memindahkan cell";
+            dragHandle.innerHTML = "⠿";
+
+            Object.assign(dragHandle.style, {
+                position: "absolute",
+                top: "2px",
+                right: "2px",
+                cursor: "move",
+                fontSize: "12px",
+                zIndex: 16,
+                color: "#999",
+                background: "transparent",
+                userSelect: "none",
+                lineHeight: "1"
+            });
+
+            td.appendChild(dragHandle);
+        }
+
+        dragHandle.setAttribute("draggable", true);
+
+        dragHandle.addEventListener("dragstart", function (e) {
+            if (PDFDesigner.isResizing) {
+                e.preventDefault();
+                return;
             }
-    
-            dragHandle.setAttribute("draggable", true);
-    
-            dragHandle.addEventListener("dragstart", function (e) {
-                if (PDFDesigner.isResizing) {
-                    e.preventDefault();
-                    return;
-                }
-    
-                dragSrcTd = td;
-                td.classList.add("dragging-td");
-                e.dataTransfer.effectAllowed = "move";
-                e.dataTransfer.setData("text/plain", "dragging");
-    
-                // Ghost image
-                const ghost = td.cloneNode(true);
-                ghost.classList.remove("dragging-td"); // pastikan tidak terbawa
-                ghost.style.position = "absolute";
-                ghost.style.top = "-9999px";
-                ghost.style.left = "-9999px";
-                ghost.style.opacity = "0.7";
-                ghost.style.pointerEvents = "none";
-                ghost.style.zIndex = "9999";
-                ghost.style.boxSizing = "border-box";
-                ghost.style.width = `${td.offsetWidth}px`;
-                ghost.style.height = `${td.offsetHeight}px`;
-    
-                document.body.appendChild(ghost);
-                e.dataTransfer.setDragImage(ghost, 0, 0);
-                setTimeout(() => document.body.removeChild(ghost), 0);
-            });
-    
-            dragHandle.addEventListener("dragend", function () {
-                if (dragSrcTd) {
-                    dragSrcTd.classList.remove("dragging-td");
-                    dragSrcTd = null;
-                }
-            });
-    
-            td.addEventListener("dragover", function (e) {
-                if (PDFDesigner.isResizing) return;
-                e.preventDefault();
-                e.dataTransfer.dropEffect = "move";
-            });
-    
-            td.addEventListener("dragenter", function () {
-                if (!PDFDesigner.isResizing) {
-                    this.classList.add("drag-over");
-                }
-            });
-    
-            td.addEventListener("dragleave", function () {
-                this.classList.remove("drag-over");
-            });
-    
-            td.addEventListener("drop", function (e) {
-                if (PDFDesigner.isResizing || !dragSrcTd || dragSrcTd === this) return;
-    
-                e.preventDefault();
-                e.stopPropagation();
-    
-                this.classList.remove("drag-over");
-    
-                const targetTd = this;
-                const srcClone = dragSrcTd.cloneNode(true);
-                const targetClone = targetTd.cloneNode(true);
-    
-                dragSrcTd.replaceWith(targetClone);
-                targetTd.replaceWith(srcClone);
-    
-                makeTableResizable(table);
-                enableHeaderDragAndDrop(tableId);
-            });
-    
-            td.addEventListener("mousemove", function (e) {
-                const isInEditable = e.target.closest("[contenteditable='true']");
-                td.style.cursor = isInEditable ? "text" : "default";
-            });
-    
-            td.addEventListener("mouseleave", function () {
-                td.style.cursor = "default";
-            });
+
+            dragSrcTd = td;
+            td.classList.add("dragging-td");
+            e.dataTransfer.effectAllowed = "move";
+            e.dataTransfer.setData("text/plain", "dragging");
+
+            // Ghost image
+            const ghost = td.cloneNode(true);
+            ghost.classList.remove("dragging-td");
+            ghost.style.position = "absolute";
+            ghost.style.top = "-9999px";
+            ghost.style.left = "-9999px";
+            ghost.style.opacity = "0.7";
+            ghost.style.pointerEvents = "none";
+            ghost.style.zIndex = "9999";
+            ghost.style.boxSizing = "border-box";
+            ghost.style.width = `${td.offsetWidth}px`;
+            ghost.style.height = `${td.offsetHeight}px`;
+
+            document.body.appendChild(ghost);
+            e.dataTransfer.setDragImage(ghost, 0, 0);
+            setTimeout(() => document.body.removeChild(ghost), 0);
         });
-    }
-    
+
+        dragHandle.addEventListener("dragend", function () {
+            if (dragSrcTd) {
+                dragSrcTd.classList.remove("dragging-td");
+                dragSrcTd = null;
+            }
+        });
+
+        td.addEventListener("dragover", function (e) {
+            if (PDFDesigner.isResizing) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+        });
+
+        td.addEventListener("dragenter", function () {
+            if (!PDFDesigner.isResizing) {
+                this.classList.add("drag-over");
+            }
+        });
+
+        td.addEventListener("dragleave", function () {
+            this.classList.remove("drag-over");
+        });
+
+        td.addEventListener("drop", function (e) {
+            if (PDFDesigner.isResizing || !dragSrcTd || dragSrcTd === this) return;
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            this.classList.remove("drag-over");
+
+            const targetTd = this;
+
+            // Simpan ukuran masing-masing sebelum swap
+            const srcWidth = dragSrcTd.style.width;
+            const srcHeight = dragSrcTd.style.height;
+            const targetWidth = targetTd.style.width;
+            const targetHeight = targetTd.style.height;
+
+            // Tukar innerHTML
+            const tempHTML = dragSrcTd.innerHTML;
+            dragSrcTd.innerHTML = targetTd.innerHTML;
+            targetTd.innerHTML = tempHTML;
+
+            // Tukar style (tanpa width & height)
+            const tempStyle = { ...dragSrcTd.style };
+            const targetStyle = { ...targetTd.style };
+
+            for (let i = 0; i < dragSrcTd.style.length; i++) {
+                const prop = dragSrcTd.style[i];
+                if (prop !== "width" && prop !== "height") {
+                    const val = dragSrcTd.style.getPropertyValue(prop);
+                    targetTd.style.setProperty(prop, val);
+                }
+            }
+
+            for (let i = 0; i < targetStyle.length; i++) {
+                const prop = targetStyle[i];
+                if (prop !== "width" && prop !== "height") {
+                    const val = targetStyle.getPropertyValue(prop);
+                    dragSrcTd.style.setProperty(prop, val);
+                }
+            }
+
+            // Kembalikan ukuran asli
+            dragSrcTd.style.width = srcWidth;
+            dragSrcTd.style.height = srcHeight;
+            targetTd.style.width = targetWidth;
+            targetTd.style.height = targetHeight;
+
+            makeTableResizable(table);
+            enableHeaderDragAndDrop(tableId);
+        });
+
+        td.addEventListener("mousemove", function (e) {
+            const isInEditable = e.target.closest("[contenteditable='true']");
+            td.style.cursor = isInEditable ? "text" : "default";
+        });
+
+        td.addEventListener("mouseleave", function () {
+            td.style.cursor = "default";
+        });
+    });
+}
+
+
 
     function injectHeaderCellControls(tableId = "table_header_style") {
         const table = document.getElementById(tableId);
         if (!table) return;
-    
+
         // Hapus semua tombol lama
         table.querySelectorAll(".cell-control-button, .add-popover").forEach(el => el.remove());
-    
+
         // Inject style global sekali saja
         if (!document.getElementById("cell-control-style")) {
             const style = document.createElement("style");
@@ -701,7 +808,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     border: 1px solid #ccc;
                     border-radius: 5px;
                     padding: 4px;
-                    z-index: 20;
+                    z-index: 9999;
                 }
                 .add-popover button {
                     width: 20px;
@@ -712,7 +819,7 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
             document.head.appendChild(style);
         }
-    
+
         const createBtn = (text, title, cls, onClick) => {
             const btn = document.createElement("button");
             btn.textContent = text;
@@ -724,18 +831,18 @@ document.addEventListener("DOMContentLoaded", () => {
             });
             return btn;
         };
-    
+
         const createAddPopover = (td, rowIndex, cellIndex) => {
             const popover = document.createElement("div");
             popover.className = "add-popover";
-    
+
             const directions = [
                 { dir: "↑", title: "Tambah Baris di Atas", action: () => addRow(rowIndex) },
                 { dir: "←", title: "Tambah Cell Kiri", action: () => addCell(rowIndex, cellIndex, "left") },
                 { dir: "→", title: "Tambah Cell Kanan", action: () => addCell(rowIndex, cellIndex, "right") },
                 { dir: "↓", title: "Tambah Baris di Bawah", action: () => addRow(rowIndex + 1) },
             ];
-    
+
             directions.forEach(({ dir, title, action }) => {
                 const btn = document.createElement("button");
                 btn.textContent = dir;
@@ -746,74 +853,92 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
                 popover.appendChild(btn);
             });
-    
+
             td.appendChild(popover);
             popover.style.top = "20px";
             popover.style.left = "20px";
         };
-    
+
         const defaultCell = () => ({
-            tag: "div",
             content: "Baru",
+            tag: "div",
+            colspan: 1,
+            rowspan: 1,
+            width: 120,
+            height: 25,
             styles: {
-                "border": "1px solid #000",
-                "padding": "5px",
-                "text-align": "center"
+                "text-align": "center",
+                "font-size": "16px",
+                "font-weight": "700",
+                "background-color": styleGroups.bodyStyle?.["background-color"] || "#ffffff",
+                "color": "#000000",
             }
         });
-    
+
         const createNewCellElement = () => {
             const td = document.createElement("td");
             td.style.position = "relative";
             td.style.border = "1px solid #000";
-            td.style.padding = "5px";
-            td.innerHTML = `<div contenteditable="true">Baru</div>`;
+            td.style.verticalAlign = "top";
+
+            const div = document.createElement("div");
+            div.contentEditable = true;
+            div.textContent = "Baru";
+
+            // Ambil default styles dan terapkan ke <div>
+            const styles = defaultCell().styles;
+            Object.entries(styles).forEach(([key, value]) => {
+                div.style.setProperty(key, value);
+            });
+
+            td.appendChild(div);
             return td;
         };
-    
+
         const addCell = (rowIdx, cellIdx, position) => {
             const tr = table.rows[rowIdx];
             if (!tr) return;
-    
+
             const refCell = tr.cells[cellIdx];
             const newCell = createNewCellElement();
-    
+
             if (position === "left") tr.insertBefore(newCell, refCell);
             else tr.insertBefore(newCell, refCell.nextSibling);
-    
-            const base = styleGroups.headerStyle?.rows?.[rowIdx]?.[cellIdx] || defaultCell();
-            const clone = JSON.parse(JSON.stringify(base));
-            clone.content = "Baru";
+
             const insertIndex = position === "left" ? cellIdx : cellIdx + 1;
-            styleGroups.headerStyle.rows[rowIdx].splice(insertIndex, 0, clone);
-    
+
+            const base = defaultCell(); // Pakai defaultCell() langsung
+            if (!styleGroups.headerStyle.rows[rowIdx]) styleGroups.headerStyle.rows[rowIdx] = [];
+            styleGroups.headerStyle.rows[rowIdx].splice(insertIndex, 0, base);
+
             injectHeaderCellControls(tableId);
             enableHeaderDragAndDrop(tableId);
             makeTableResizable(table);
         };
-    
+
         const addRow = (rowIdx) => {
             const newRow = document.createElement("tr");
             const newCell = createNewCellElement();
             newRow.appendChild(newCell);
-    
+
             const refRow = table.rows[rowIdx];
             if (refRow) table.tBodies[0].insertBefore(newRow, refRow);
             else table.tBodies[0].appendChild(newRow);
-    
+
             const newRowData = [defaultCell()];
             styleGroups.headerStyle.rows.splice(rowIdx, 0, newRowData);
-    
+
             injectHeaderCellControls(tableId);
             enableHeaderDragAndDrop(tableId);
             makeTableResizable(table);
         };
-    
+
+
         // Inject tombol hapus dan tambah ke setiap cell
         table.querySelectorAll("tr").forEach((tr, rowIndex) => {
             tr.querySelectorAll("td").forEach((td, cellIndex) => {
                 td.style.position = "relative";
-    
+
                 const btnDel = createBtn("×", "Hapus Cell", "cell-control-del", () => {
                     tr.removeChild(td);
                     if (styleGroups.headerStyle?.rows?.[rowIndex]) {
@@ -826,7 +951,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 td.appendChild(btnDel);
                 btnDel.style.top = "0";
                 btnDel.style.left = "0";
-    
+
                 const btnAdd = createBtn("+", "Tambah", "cell-control-add", () => {
                     const existingPopover = td.querySelector(".add-popover");
                     table.querySelectorAll(".add-popover").forEach(p => p.remove());
@@ -839,13 +964,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 btnAdd.style.right = "0";
             });
         });
-    
+
         // Jika semua cell kosong, tampilkan tombol tambah pertama
         const isEmpty = !styleGroups.headerStyle?.rows?.length || styleGroups.headerStyle.rows.every(row => !row.length);
         if (isEmpty) {
             const tbody = table.querySelector("tbody") || table.createTBody();
             tbody.innerHTML = '';
-    
+
             const tr = document.createElement("tr");
             const td = document.createElement("td");
             td.colSpan = 100;
@@ -856,7 +981,7 @@ document.addEventListener("DOMContentLoaded", () => {
             td.style.verticalAlign = "middle";
             td.style.textAlign = "center";
             td.style.padding = "0";
-    
+
             const btnAddFirst = document.createElement("button");
             btnAddFirst.textContent = "+ Tambah Cell Pertama";
             btnAddFirst.style.width = "100%";
@@ -866,20 +991,100 @@ document.addEventListener("DOMContentLoaded", () => {
             btnAddFirst.style.cursor = "pointer";
             btnAddFirst.style.color = "#28a745";
             btnAddFirst.style.fontWeight = "bold";
-    
+
             btnAddFirst.addEventListener("click", () => {
                 addRow(0);
                 tr.remove(); // ✅ Hapus tombol saat ditekan
             });
-    
+
             td.appendChild(btnAddFirst);
             tr.appendChild(td);
             tbody.appendChild(tr);
         }
     }
-    
-    
-    
+
+
+    document.addEventListener("click", (event) => {
+        const td = event.target.closest("td");
+        const table = td?.closest("table");
+
+        const headerTable = document.getElementById("table_header_style");
+        const headerPanel = document.querySelector('[data-content="headerStyle"]');
+
+        const clickedInsideHeaderTable = headerTable?.contains(event.target);
+        const clickedInsideHeaderPanel = headerPanel?.contains(event.target);
+
+        if (td && table?.id === "table_header_style") {
+            // Hapus seleksi sebelumnya
+            document.querySelectorAll("#table_header_style td").forEach(cell => {
+                cell.classList.remove("selected-td", "outline-dashed", "outline-2", "outline-blue-500", "bg-blue-100");
+            });
+
+            // Tandai cell yang dipilih
+            td.classList.add("selected-td", "outline-dashed", "outline-2", "outline-blue-500", "bg-blue-100");
+
+            // Tampilkan input panel
+            toggleHeaderStyleInputs(true);
+
+            // Ambil koordinat
+            const rowIndex = td.parentElement.rowIndex;
+            const cellIndex = td.cellIndex;
+
+            // Ambil style dari styleGroups
+            const cellData = styleGroups.headerStyle?.rows?.[rowIndex]?.[cellIndex];
+            const styleObj = cellData?.styles || {};
+
+            document.querySelectorAll("[data-style-group='headerStyleCell']").forEach(input => {
+                const attr = input.dataset.styleAttr;
+                if (!attr) return;
+                let value = styleObj[attr] || '';
+                if (input.type === "number") {
+                    value = parseFloat(value) || '';
+                }
+                input.value = value;
+            });
+        }
+
+        // Jika klik di luar header table & panel kontrol
+        else if (!clickedInsideHeaderTable && !clickedInsideHeaderPanel) {
+            // Hapus seleksi dan sembunyikan input
+            document.querySelectorAll("#table_header_style td").forEach(cell => {
+                cell.classList.remove("selected-td", "outline-dashed", "outline-2", "outline-blue-500", "bg-blue-100");
+            });
+            toggleHeaderStyleInputs(false);
+        }
+    });
+
+
+
+    // Deteksi perubahan input style
+    // document.querySelectorAll("[data-style-group='headerStyleCell']").forEach(input => {
+    //     input.addEventListener("input", (e) => {
+    //         const selectedTd = document.querySelector("#table_header_style td.selected-td");
+    //         if (!selectedTd) return;
+
+    //         const attr = e.target.dataset.styleAttr;
+    //         const value = e.target.value;
+
+    //         const rowIndex = selectedTd.parentElement.rowIndex;
+    //         const cellIndex = selectedTd.cellIndex;
+
+    //         if (!styleGroups.headerStyle.rows[rowIndex]) return;
+    //         if (!styleGroups.headerStyle.rows[rowIndex][cellIndex]) {
+    //             styleGroups.headerStyle.rows[rowIndex][cellIndex] = {};
+    //         }
+
+    //         // Update styleGroups dan apply ke elemen
+    //         styleGroups.headerStyle.rows[rowIndex][cellIndex][attr] = value;
+    //         selectedTd.querySelector("*")?.style?.setProperty(attr, value);
+    //     });
+    // });
+
+    function toggleHeaderStyleInputs(show) {
+        document.querySelectorAll("[data-style-group='headerStyleCell']").forEach(input => {
+            input.parentElement.style.display = show ? "block" : "none";
+        });
+    }
 
 
     // Tombol tambah selector
@@ -989,6 +1194,55 @@ document.addEventListener("DOMContentLoaded", () => {
         previewContainer.textContent = htmlCode;
     }
 
+    function initHeaderStyleCellInputs() {
+        const inputs = document.querySelectorAll("[data-style-group='headerStyleCell']");
+        inputs.forEach(input => {
+            input.addEventListener("input", (e) => {
+                const attr = e.target.dataset.styleAttr;
+                const value = e.target.value;
+
+                const selected = document.querySelector("#table_header_style td.selected-td");
+                if (!selected) return;
+
+                const rowIndex = selected.parentElement.rowIndex;
+                const cellIndex = selected.cellIndex;
+
+                const cell = styleGroups.headerStyle?.rows?.[rowIndex]?.[cellIndex];
+                if (!cell) return;
+
+                // Pastikan objek styles ada
+                if (!cell.styles) cell.styles = {};
+
+                // Jika properti pixel-based, tambahkan satuan otomatis
+                const pxProps = ["font-size", "padding", "border-width", "width", "height"];
+                const styleValue = pxProps.includes(attr) && !value.includes("px") ? `${value}px` : value;
+
+                cell.styles[attr] = styleValue;
+                console.log("Editing attr:", attr, "Value:", finalValue, "On cell:", rowIndex, colIndex);
+                // Perbarui tampilan tanpa full reload
+                updateSingleHeaderCellStyle(rowIndex, cellIndex);
+            });
+        });
+    }
+
+    function updateSingleHeaderCellStyle(rowIndex, cellIndex) {
+        const cellData = styleGroups.headerStyle?.rows?.[rowIndex]?.[cellIndex];
+        if (!cellData) return;
+
+        const td = document.querySelector(`#table_header_style tr:nth-child(${rowIndex + 1}) td:nth-child(${cellIndex + 1})`);
+        if (!td) return;
+
+        const innerEl = td.querySelector(cellData.tag || "div");
+        if (!innerEl) return;
+
+        const styles = cellData.styles || {};
+        Object.entries(styles).forEach(([key, val]) => {
+            innerEl.style[key] = val;
+        });
+    }
+
+
+
     // ✅ Fungsi ini bisa kamu panggil untuk keperluan seperti generatePreview()
     PDFDesigner.getSelectorValues = () => manager.getAllValuesAsObject();
 
@@ -1007,7 +1261,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const metaSubject = getValue(selectorVars.metaSubject);
         const footer = getValue(selectorVars.footer);
         const updatedHeaderStyle = buildHeaderStyleFromDOM("table_header_style");
-
+        // console.log("headerTableStyle ", styleGroups.haderTableStyle);
+        // console.log("styleGroupsHeaderStyles ", updatedHeaderStyle);
         // Ambil header hasil edit yang dinamakan "header_<field>"
         const customHeaders = {};
         for (const key in values) {
@@ -1083,16 +1338,16 @@ document.addEventListener("DOMContentLoaded", () => {
             });
     }
 
-    function applyStyleGroupsToForm() {
-        document.querySelectorAll('[data-style-group]').forEach(input => {
-            const group = input.dataset.styleGroup;
-            const attr = input.dataset.styleAttr;
+    // function applyStyleGroupsToForm() {
+    //     document.querySelectorAll('[data-style-group]').forEach(input => {
+    //         const group = input.dataset.styleGroup;
+    //         const attr = input.dataset.styleAttr;
 
-            if (styleGroups[group] && styleGroups[group][attr] !== undefined) {
-                input.value = styleGroups[group][attr];
-            }
-        });
-    }
+    //         if (styleGroups[group] && styleGroups[group][attr] !== undefined) {
+    //             input.value = styleGroups[group][attr];
+    //         }
+    //     });
+    // }
 
     function applyStyleGroupsToForm() {
         document.querySelectorAll('[data-style-group]').forEach(input => {
@@ -1216,19 +1471,12 @@ document.addEventListener("DOMContentLoaded", () => {
         renderPreview(cachedData);
     }
 
-
-    // function getStyleString(styleObj) {
-    //     return Object.entries(styleObj || {})
-    //         .map(([prop, value]) => `${prop}: ${value}`)
-    //         .join('; ');
-    // }
-
     function makeTableResizable(table) {
         const cols = table.querySelectorAll("th, td");
-    
+
         cols.forEach((col, index) => {
             col.style.position = "relative";
-    
+
             const wrapper = document.createElement("div");
             wrapper.style.position = "absolute";
             wrapper.style.top = "0";
@@ -1237,7 +1485,7 @@ document.addEventListener("DOMContentLoaded", () => {
             wrapper.style.bottom = "0";
             wrapper.style.pointerEvents = "none";
             col.appendChild(wrapper);
-    
+
             const resizerRight = document.createElement("div");
             resizerRight.style.position = "absolute";
             resizerRight.style.top = "0";
@@ -1248,7 +1496,7 @@ document.addEventListener("DOMContentLoaded", () => {
             resizerRight.style.zIndex = "1000";
             resizerRight.style.pointerEvents = "auto";
             wrapper.appendChild(resizerRight);
-    
+
             const resizerBottom = document.createElement("div");
             resizerBottom.style.position = "absolute";
             resizerBottom.style.bottom = "-2px";
@@ -1258,81 +1506,89 @@ document.addEventListener("DOMContentLoaded", () => {
             resizerBottom.style.cursor = "row-resize";
             resizerBottom.style.zIndex = "1000";
             resizerBottom.style.pointerEvents = "auto";
-    
-            // Hanya tambahkan resizer height jika bukan dari tbody (data body)
+
             const isHeaderCell = !col.closest("tbody#table_data_body");
             if (isHeaderCell) {
                 wrapper.appendChild(resizerBottom);
             }
-    
+
             let startX, startY, startWidth, startHeight, tableWidth;
-    
+
             resizerRight.addEventListener("mousedown", function (e) {
                 PDFDesigner.isResizing = true;
                 startX = e.pageX;
                 startWidth = col.offsetWidth;
                 tableWidth = table.offsetWidth;
-    
+
                 document.addEventListener("mousemove", onMouseMoveWidth);
                 document.addEventListener("mouseup", onMouseUpWidth);
             });
-    
+
             function onMouseMoveWidth(e) {
                 const delta = e.pageX - startX;
                 let newWidthPx = startWidth + delta;
                 const minWidthPx = tableWidth * 0.01;
                 if (newWidthPx < minWidthPx) newWidthPx = minWidthPx;
                 const newWidthPercent = (newWidthPx / tableWidth) * 100;
-    
-                col.style.width = `${newWidthPercent}%`;
-    
+
+                // Temukan index kolom dalam satu row
+                const colIndex = Array.from(col.parentElement.children).indexOf(col);
+
+                // Ubah semua baris di kolom yang sama
+                table.querySelectorAll("tr").forEach((row, rowIndex) => {
+                    const cell = row.children[colIndex];
+                    if (cell) {
+                        cell.style.width = `${newWidthPercent}%`;
+                    }
+                });
+
                 if (table.id === "table_header_style") {
                     const cellIndex = Array.from(cols).indexOf(col);
-                    let rowIndex = 0, colIndex = 0, counter = 0;
+                    let rowIndex = 0, colIdx = 0, counter = 0;
                     outer: for (let i = 0; i < styleGroups.headerStyle.rows.length; i++) {
                         for (let j = 0; j < styleGroups.headerStyle.rows[i].length; j++) {
                             if (counter === cellIndex) {
                                 rowIndex = i;
-                                colIndex = j;
+                                colIdx = j;
                                 break outer;
                             }
                             counter++;
                         }
                     }
-                    const cell = styleGroups.headerStyle.rows?.[rowIndex]?.[colIndex];
+                    const cell = styleGroups.headerStyle.rows?.[rowIndex]?.[colIdx];
                     if (cell) {
-                        cell.width = `${newWidthPx}px`;
+                        cell.width = `${newWidthPercent.toFixed(2)}%`;
                     }
                 } else {
                     if (!styleGroups.columnWidths) styleGroups.columnWidths = [];
-                    styleGroups.columnWidths[index] = `${newWidthPercent.toFixed(2)}%`;
+                    styleGroups.columnWidths[colIndex] = `${newWidthPercent.toFixed(2)}%`;
                 }
             }
-    
+
             function onMouseUpWidth() {
                 PDFDesigner.isResizing = false;
                 document.removeEventListener("mousemove", onMouseMoveWidth);
                 document.removeEventListener("mouseup", onMouseUpWidth);
             }
-    
-            // Hanya pasang event untuk resize height jika cell bukan di tbody
+
+            // Resize height hanya untuk header
             if (isHeaderCell) {
                 resizerBottom.addEventListener("mousedown", function (e) {
                     PDFDesigner.isResizing = true;
                     startY = e.pageY;
                     startHeight = col.offsetHeight;
-    
+
                     document.addEventListener("mousemove", onMouseMoveHeight);
                     document.addEventListener("mouseup", onMouseUpHeight);
                 });
-    
+
                 function onMouseMoveHeight(e) {
                     const delta = e.pageY - startY;
                     let newHeightPx = startHeight + delta;
                     if (newHeightPx < 10) newHeightPx = 10;
-    
+
                     col.style.height = `${newHeightPx}px`;
-    
+
                     if (table.id === "table_header_style") {
                         const cellIndex = Array.from(cols).indexOf(col);
                         let rowIndex = 0, colIndex = 0, counter = 0;
@@ -1348,14 +1604,20 @@ document.addEventListener("DOMContentLoaded", () => {
                         }
                         const cell = styleGroups.headerStyle.rows?.[rowIndex]?.[colIndex];
                         if (cell) {
-                            cell.height = `${newHeightPx}px`;
+                            // Dapatkan tinggi parent (tr) agar bisa konversi ke persen
+                            const tr = col.parentElement;
+                            const rowHeight = tr.offsetHeight || 1; // hindari pembagi 0
+                            const newHeightPercent = (newHeightPx / rowHeight) * 100;
+
+                            cell.height = `${newHeightPercent.toFixed(2)}%`;
+
                         }
                     } else {
                         if (!styleGroups.haderTableStyle) styleGroups.haderTableStyle = {};
                         styleGroups.haderTableStyle['height'] = `${newHeightPx}px`;
                     }
                 }
-    
+
                 function onMouseUpHeight() {
                     PDFDesigner.isResizing = false;
                     document.removeEventListener("mousemove", onMouseMoveHeight);
@@ -1363,7 +1625,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
         });
-    }    
+    }
 
 
     function applyColumnWidths(table) {
@@ -1415,25 +1677,50 @@ document.addEventListener("DOMContentLoaded", () => {
             [width, height] = [height, width];
         }
 
+        previewElement.style.overflow = `auto`;
         previewElement.style.width = `${width}mm`;
         previewElement.style.height = `${height}mm`;
         previewElement.style.border = '1px solid #ccc';
         previewElement.style.backgroundColor = styleGroups.bodyStyle['background-color'];
     }
+
+    
     selectorVars.paperSize.addEventListener("change", toggleCustomInputs);
     toggleCustomInputs();
     selectorVars.paperSize.addEventListener("change", setPreviewSize);
     selectorVars.paperOrientation.addEventListener("change", setPreviewSize);
     document.querySelectorAll('[data-style-group]').forEach(input => {
-        input.addEventListener('input', () => {
-            updateStyleGroupsFromInputs();
-            renderPreview(cachedData); // Gunakan data yang sudah diambil
-        });
-        input.addEventListener('change', () => {
-            updateStyleGroupsFromInputs();
-            renderPreview(cachedData);
-        });
+        input.addEventListener('input', handleInputChange);
+        input.addEventListener('change', handleInputChange);
     });
+
+    function handleInputChange() {
+        // Simpan yang dipilih
+        const selected = document.querySelector("#table_header_style td.selected-td");
+        let rowIndex = -1;
+        let cellIndex = -1;
+
+        if (selected) {
+            rowIndex = selected.parentElement.rowIndex;
+            cellIndex = selected.cellIndex;
+        }
+
+        updateStyleGroupsFromInputs();
+        renderPreview(cachedData);
+
+        // Coba kembalikan class selected-td
+        if (rowIndex !== -1 && cellIndex !== -1) {
+            const restoredCell = document.querySelector(
+                `#table_header_style tr:nth-child(${rowIndex + 1}) td:nth-child(${cellIndex + 1})`
+            );
+            if (restoredCell) {
+                restoredCell.classList.add("selected-td", "outline-dashed", "outline-2", "outline-blue-500", "bg-blue-100");
+            }
+        }
+
+        initHeaderStyleCellInputs();
+    }
+
 
     updateStyleGroupsFromInputs();
     generatePreview();
@@ -1448,7 +1735,6 @@ document.addEventListener("DOMContentLoaded", () => {
             allPopovers.forEach(p => p.remove());
         }
     });
-
 
 
     downloadButton.addEventListener('click', () => {
