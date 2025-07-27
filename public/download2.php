@@ -171,7 +171,6 @@ function buildDesignerFromRequest(): PDFReportDesigner {
     $metaTitle = $_GET['metaTitle'] ?? '';
     $metaAuthor = $_GET['metaAuthor'] ?? '';
     $metaSubject = $_GET['metaSubject'] ?? '';
-    $footer = $_GET['footer'] ?? '';
     $columnWidths = isset($_GET['columnWidths']) ? json_decode(urldecode($_GET['columnWidths']), true) : [];
     $headerStyle = json_decode(urldecode($_GET['headerStyle']), true);
     $bodyStyle = getStyleFromQuery('bodyStyle', 'margin: 20px; padding: 20px; box-sizing: border-box; font-family: Arial, sans-serif; background-color: #ffffff;');
@@ -199,7 +198,6 @@ function buildDesignerFromRequest(): PDFReportDesigner {
 
     $designer->setPaperOrientation($paperOrientation);
     $designer->setMetadata($metaTitle, $metaAuthor, $metaSubject);
-    $designer->setFooter($footer);
 
     if (!empty($columnWidths) && is_array($columnWidths)) {
         $designer->setColumnWidths($columnWidths);

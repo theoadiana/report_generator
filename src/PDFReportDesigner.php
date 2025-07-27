@@ -9,7 +9,6 @@ class PDFReportDesigner
     private array $headerStyle = [];
     private string|array $paperSize = 'A4';
     private string $paperOrientation = 'portrait';
-    private string $footer = '';
     private array $columnWidths = [];
     private array $customHeaders = [];
     private string $query = '';
@@ -56,11 +55,6 @@ class PDFReportDesigner
         $this->metaTitle = $metaTitle;
         $this->metaAuthor = $metaAuthor;
         $this->metaSubject = $metaSubject;
-    }
-
-    public function setFooter(string $footer): void
-    {
-        $this->footer = $footer;
     }
 
     public function setColumnWidths(array $widths): void
@@ -200,8 +194,6 @@ class PDFReportDesigner
             return '<p>Tidak ada data untuk ditampilkan.</p>';
         }
 
-        $footerText = addslashes($this->replacePlaceholders($this->footer));
-
         $html = '<html><head>
                 <meta name="title" content="' . htmlspecialchars($this->metaTitle) . '">
                 <meta name="author" content="' . htmlspecialchars($this->metaAuthor) . '">
@@ -315,30 +307,9 @@ class PDFReportDesigner
         }
         $html .= '</tbody>';
 
-        // Optional footer row
-        if (!empty($this->footer)) {
-            $html .= '<tfoot><tr><td colspan="' . count($columns) . '" style="text-align: center; font-weight: bold;">' . htmlspecialchars($this->replacePlaceholders($this->footer)) . '</td></tr></tfoot>';
-        }
-
         $html .= '</table>';
 
-        // Footer script (nomor halaman)
-        $html .= '
-    <script type="text/php">
-        if (isset($pdf)) {
-            $pdf->page_script(function ($pageNumber, $pageCount, $pdf) {
-                $font = $pdf->getFontMetrics()->getFont("Helvetica", "normal");
-                $text = "' . $footerText . ' - Halaman $pageNumber dari $pageCount";
-                $width = $pdf->get_width();
-                $textWidth = $pdf->getFontMetrics()->getTextWidth($text, $font, 10);
-                $x = ($width - $textWidth) / 2;
-                $pdf->text($x, 820, $text, $font, 10);
-            });
-        }
-    </script>';
-
         $html .= '</body></html>';
-        echo2file($html);
         return $html;
     }
 
@@ -355,7 +326,6 @@ class PDFReportDesigner
             'fontStyle' => $this->fontStyle,
             'paperSize' => $this->paperSize,
             'paperOrientation' => $this->paperOrientation,
-            'footer' => $this->footer,
             'columnWidths' => $this->columnWidths,
             'customHeaders' => $this->customHeaders,
             'metaTitle' => $this->metaTitle,
