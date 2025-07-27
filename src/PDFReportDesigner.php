@@ -7,6 +7,7 @@ class PDFReportDesigner
     private string $tableStyle = 'width: 100%; border-collapse: collapse; margin-top: 20px; margin-bottom: 20px; table-layout: fixed; word-wrap: break-word;';
     private string $fontStyle = 'font-family: Arial, sans-serif;';
     private array $headerStyle = [];
+    private array $footerStyle = [];
     private string|array $paperSize = 'A4';
     private string $paperOrientation = 'portrait';
     private array $columnWidths = [];
@@ -62,44 +63,83 @@ class PDFReportDesigner
         $this->columnWidths = $widths;
     }
     public function setHeaderStyle(array $headerStyle): void
-{
-    // Ambil background-color dari bodyStyle
-    $bgColor = $this->parseStyleStringToArray($this->bodyStyle)['background-color'] ?? '#ffffff';
+    {
+        // Ambil background-color dari bodyStyle
+        $bgColor = $this->parseStyleStringToArray($this->bodyStyle)['background-color'] ?? '#ffffff';
 
-    if (isset($headerStyle['rows']) && is_array($headerStyle['rows'])) {
-        foreach ($headerStyle['rows'] as $i => $row) {
-            foreach ($row as $j => $cell) {
-                if (isset($cell['styles']) && is_array($cell['styles'])) {
-                    $cellStyles = [];
+        if (isset($headerStyle['rows']) && is_array($headerStyle['rows'])) {
+            foreach ($headerStyle['rows'] as $i => $row) {
+                foreach ($row as $j => $cell) {
+                    if (isset($cell['styles']) && is_array($cell['styles'])) {
+                        $cellStyles = [];
 
-                    foreach ($cell['styles'] as $key => $value) {
-                        // Lewati properti yang tidak diinginkan
-                        if (in_array($key, ['display'])) {
-                            continue;
+                        foreach ($cell['styles'] as $key => $value) {
+                            // Lewati properti yang tidak diinginkan
+                            if (in_array($key, ['display'])) {
+                                continue;
+                            }
+
+                            // Ubah border jadi 1px solid warna bodyStyle
+                            if (in_array($key, ['border', 'border-top', 'border-right', 'border-bottom', 'border-left'])) {
+                                // $cellStyles[$key] = '1px solid ' . $bgColor;
+                            } else {
+                                $cellStyles[$key] = $value;
+                            }
                         }
 
-                        // Ubah border jadi 1px solid warna bodyStyle
-                        if (in_array($key, ['border', 'border-top', 'border-right', 'border-bottom', 'border-left'])) {
-                            // $cellStyles[$key] = '1px solid ' . $bgColor;
-                        } else {
-                            $cellStyles[$key] = $value;
+                        // Tambahkan vertical-align: top jika belum ada
+                        if (!isset($cellStyles['vertical-align'])) {
+                            $cellStyles['vertical-align'] = 'top';
                         }
-                    }
 
-                    // Tambahkan vertical-align: top jika belum ada
-                    if (!isset($cellStyles['vertical-align'])) {
-                        $cellStyles['vertical-align'] = 'top';
+                        $headerStyle['rows'][$i][$j]['styles'] = $cellStyles;
                     }
-
-                    $headerStyle['rows'][$i][$j]['styles'] = $cellStyles;
                 }
             }
         }
+
+        $this->headerStyle = $headerStyle;
     }
 
-    $this->headerStyle = $headerStyle;
-}
 
+    public function setFooterStyle(array $footerStyle): void
+    {
+        // Ambil background-color dari bodyStyle
+        $bgColor = $this->parseStyleStringToArray($this->bodyStyle)['background-color'] ?? '#ffffff';
+
+        if (isset($footerStyle['rows']) && is_array($footerStyle['rows'])) {
+            foreach ($footerStyle['rows'] as $i => $row) {
+                foreach ($row as $j => $cell) {
+                    if (isset($cell['styles']) && is_array($cell['styles'])) {
+                        $cellStyles = [];
+
+                        foreach ($cell['styles'] as $key => $value) {
+                            // Lewati properti yang tidak diinginkan
+                            if (in_array($key, ['display'])) {
+                                continue;
+                            }
+
+                            // Ubah border jadi 1px solid warna bodyStyle
+                            if (in_array($key, ['border', 'border-top', 'border-right', 'border-bottom', 'border-left'])) {
+                                // $cellStyles[$key] = '1px solid ' . $bgColor;
+                            } else {
+                                $cellStyles[$key] = $value;
+                            }
+                        }
+
+                        // Tambahkan vertical-align: top jika belum ada
+                        if (!isset($cellStyles['vertical-align'])) {
+                            $cellStyles['vertical-align'] = 'top';
+                        }
+
+                        $footerStyle['rows'][$i][$j]['styles'] = $cellStyles;
+                    }
+                }
+            }
+        }
+
+        $this->footerStyle = $footerStyle;
+    }
 
 
     public function setCustomHeaders(array $headers): void
@@ -149,6 +189,10 @@ class PDFReportDesigner
     public function getHeaderStyle(): array
     {
         return $this->headerStyle;
+    }
+    public function getFooterStyle(): array
+    {
+        return $this->footerStyle;
     }
 
     public function getCustomHeaders(): array
@@ -309,6 +353,63 @@ class PDFReportDesigner
 
         $html .= '</table>';
 
+        // FOOTER STYLE SECTION
+        if (!empty($this->footerStyle['rows']) && is_array($this->footerStyle['rows'])) {
+            // Hitung total kolom maksimum (untuk fallback distribusi width)
+            $maxCols = 0;
+            foreach ($this->footerStyle['rows'] as $row) {
+                $colCount = 0;
+                foreach ($row as $cell) {
+                    $colspan = isset($cell['colspan']) ? (int) $cell['colspan'] : 1;
+                    $colCount += $colspan;
+                }
+                if ($colCount > $maxCols) {
+                    $maxCols = $colCount;
+                }
+            }
+
+            $html .= '<table style="width: 100%; border-collapse: collapse;">';
+
+            foreach ($this->footerStyle['rows'] as $row) {
+                $html .= '<tr>';
+                foreach ($row as $cell) {
+                    $tag = $cell['tag'] ?? 'div';
+                    $content = $this->replacePlaceholders($cell['content'] ?? '');
+                    $colspanVal = $cell['colspan'] ?? 1;
+                    $rowspanVal = $cell['rowspan'] ?? 1;
+
+                    $colspan = $colspanVal > 1 ? 'colspan="' . $colspanVal . '"' : '';
+                    $rowspan = $rowspanVal > 1 ? 'rowspan="' . $rowspanVal . '"' : '';
+
+                    // Handle style
+                    $styles = $cell['styles'] ?? [];
+
+                    // Remove conflicting keys if width/height is separately defined
+                    unset($styles['width'], $styles['height']);
+
+                    // Convert styles array to string
+                    $styleStr = $this->styleArrayToString($styles);
+
+                    // Calculate or use defined width
+                    if (isset($cell['width'])) {
+                        $width = 'width: ' . $cell['width'] . ';';
+                    } else {
+                        $widthPercent = round(($colspanVal / $maxCols) * 100, 2);
+                        $width = "width: {$widthPercent}%;";
+                    }
+
+                    $height = isset($cell['height']) ? 'height: ' . $cell['height'] . ';' : '';
+
+                    $combinedStyles = $width . $height . $styleStr;
+
+                    $html .= "<td $colspan $rowspan style='$combinedStyles'><$tag>" . htmlspecialchars($content) . "</$tag></td>";
+                }
+                $html .= '</tr>';
+            }
+
+            $html .= '</table>';
+        }
+
         $html .= '</body></html>';
         return $html;
     }
@@ -333,6 +434,7 @@ class PDFReportDesigner
             'metaSubject' => $this->metaSubject,
             'bodyStyle' => $this->parseStyleStringToArray($this->bodyStyle),
             'headerStyle' => $this->headerStyle,
+            'footerStyle' => $this->footerStyle,
         ];
     }
 

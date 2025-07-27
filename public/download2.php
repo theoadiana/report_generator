@@ -173,6 +173,7 @@ function buildDesignerFromRequest(): PDFReportDesigner {
     $metaSubject = $_GET['metaSubject'] ?? '';
     $columnWidths = isset($_GET['columnWidths']) ? json_decode(urldecode($_GET['columnWidths']), true) : [];
     $headerStyle = json_decode(urldecode($_GET['headerStyle']), true);
+    $footerStyle = json_decode(urldecode($_GET['footerStyle']), true);
     $bodyStyle = getStyleFromQuery('bodyStyle', 'margin: 20px; padding: 20px; box-sizing: border-box; font-family: Arial, sans-serif; background-color: #ffffff;');
     $customHeaders = [];
     if (isset($_GET['headers'])) {
@@ -189,6 +190,7 @@ function buildDesignerFromRequest(): PDFReportDesigner {
     $designer->setCustomHeaders($customHeaders);
     $designer->setBodyStyle($bodyStyle);
     $designer->setHeaderStyle($headerStyle);
+    $designer->setFooterStyle($footerStyle);
 
     if ($paperSize === 'custom') {
         $designer->setPaperSize([0, 0, $customWidth, $customHeight]);
