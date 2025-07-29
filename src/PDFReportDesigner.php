@@ -4,7 +4,7 @@ class PDFReportDesigner
 {
     private string $headerTableStyle = 'font-size: 14px; font-weight: bold; color: #000000; text-align: center; background-color: #ffffff; border: 1px solid #000000; padding: 8px;';
     private string $rowTableStyle = 'font-size: 12px; font-weight: normal; color: #000000; text-align: left; background-color: #f9f9f9; border: 1px solid #000000; padding: 6px;';
-    private string $tableStyle = 'width: 100%; border-collapse: collapse; margin-top: 20px; margin-bottom: 20px; table-layout: fixed; word-wrap: break-word;';
+    private string $tableStyle = 'width: 100%; border-collapse: collapse; table-layout: fixed; word-wrap: break-word;';
     private string $fontStyle = 'font-family: Arial, sans-serif;';
     private array $headerStyle = [];
     private array $footerStyle = [];
@@ -230,8 +230,6 @@ class PDFReportDesigner
         return strtr($text, $replacements);
     }
 
-
-
     public function generateHTML(array $data): string
     {
         if (empty($data)) {
@@ -258,10 +256,6 @@ class PDFReportDesigner
                         border: 1px solid #000;
                         box-sizing: border-box;
                         overflow: hidden;
-                    }
-                    td > * {
-                        display: block;
-                        text-align: center;
                     }
                 </style>
             </head><body>';
@@ -413,8 +407,6 @@ class PDFReportDesigner
         $html .= '</body></html>';
         return $html;
     }
-
-
 
 
     public function getTemplateAsArray(): array

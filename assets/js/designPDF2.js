@@ -95,17 +95,16 @@ document.addEventListener("DOMContentLoaded", () => {
         "metaSubject",
         "customWidth",
         "customHeight",
-        "haderTableStyle",
+        "headerTableStyle",
         "rowTableStyle",
-        "rowColor",
         "footerStyle",
         "bodyStyle",
     ].forEach((id) => manager.register(id));
 
     const selectorVars = manager.generateSelectorVariables();
     const styleGroups = {
-        haderTableStyle: {
-            'font-size': '14px',
+        headerTableStyle: {
+            'font-size': '16px',
             'font-weight': 'bold',
             'color': '#000000',
             'text-align': 'center',
@@ -349,7 +348,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             styleGroups.columnWidths = Array.from({ length: columnCount }, () => percentage);
 
-            // console.log("Column widths set (percent-based):", styleGroups.columnWidths);
+            console.log("Column widths set (percent-based):", styleGroups.columnWidths);
         } catch (error) {
             console.error("Gagal mengambil data untuk columnWidths:", error);
         }
@@ -489,7 +488,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Terapkan langsung ke DOM
                 const inner = selectedTd.querySelector("*");
                 if (inner) inner.style.setProperty(attr, value);
-
             } else {
                 // Handler untuk global styleGroup biasa
                 if (!styleGroups[group]) styleGroups[group] = {};
@@ -497,8 +495,6 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     }
-
-
 
 
     function renderPreview(data) {
@@ -511,7 +507,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         setPreviewSize();
 
-        const values = PDFDesigner.getSelectorValues();
         const headers = Object.keys(data[0]);
 
         // Placeholder otomatis
@@ -533,7 +528,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <style>
                 .generatorPDF { ${PDFDesigner.getStyleString(styleGroups.bodyStyle)} }
                 .generatorPDF-table { ${PDFDesigner.getStyleString(styleGroups.tableStyle)} }
-                .generatorPDF-th { ${PDFDesigner.getStyleString(styleGroups.haderTableStyle)} }
+                .generatorPDF-th { ${PDFDesigner.getStyleString(styleGroups.headerTableStyle)} }
                 .generatorPDF-td { ${PDFDesigner.getStyleString(styleGroups.rowTableStyle)} }
                 .resizable-wrapper {
                     width: 100%;
@@ -611,9 +606,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     <thead id="table_header_tableStyle">
                         <tr>
                             ${headers.map(header => {
-            const customHeader = manager.selectors[`header_${header}`]?.content || header;
-            return `<th id="header_${header}" contentEditable="true" class="generatorPDF-th">${customHeader}</th>`;
-        }).join('')}
+                                const customHeader = manager.selectors[`header_${header}`]?.content || header;
+                                return `<th id="header_${header}" contentEditable="true" class="generatorPDF-th">${customHeader}</th>`;
+                            }).join('')}
                         </tr>
                     </thead>
                     <tbody id="table_data_body">
@@ -1186,32 +1181,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-
-
-
-    // Deteksi perubahan input style
-    // document.querySelectorAll("[data-style-group='headerStyleCell']").forEach(input => {
-    //     input.addEventListener("input", (e) => {
-    //         const selectedTd = document.querySelector("#table_header_style td.selected-td");
-    //         if (!selectedTd) return;
-
-    //         const attr = e.target.dataset.styleAttr;
-    //         const value = e.target.value;
-
-    //         const rowIndex = selectedTd.parentElement.rowIndex;
-    //         const cellIndex = selectedTd.cellIndex;
-
-    //         if (!styleGroups.headerStyle.rows[rowIndex]) return;
-    //         if (!styleGroups.headerStyle.rows[rowIndex][cellIndex]) {
-    //             styleGroups.headerStyle.rows[rowIndex][cellIndex] = {};
-    //         }
-
-    //         // Update styleGroups dan apply ke elemen
-    //         styleGroups.headerStyle.rows[rowIndex][cellIndex][attr] = value;
-    //         selectedTd.querySelector("*")?.style?.setProperty(attr, value);
-    //     });
-    // });
-
     function toggleStyleInputs(groupName, show) {
         document.querySelectorAll(`[data-style-group='${groupName}']`).forEach(input => {
             input.parentElement.style.display = show ? "block" : "none";
@@ -1328,12 +1297,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function initStyleCellInputs(group = "headerStyle") {
         const inputs = document.querySelectorAll(`[data-style-group='${group}Cell']`);
-
         inputs.forEach(input => {
             input.addEventListener("input", (e) => {
                 const attr = e.target.dataset.styleAttr;
                 const value = e.target.value;
-
                 const selected = document.querySelector("td.selected-td");
                 if (!selected) return;
 
@@ -1376,8 +1343,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-
-
     // ✅ Fungsi ini bisa kamu panggil untuk keperluan seperti generatePreview()
     PDFDesigner.getSelectorValues = () => manager.getAllValuesAsObject();
 
@@ -1407,7 +1372,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const params = new URLSearchParams({
-            haderTableStyle: encodeURIComponent(JSON.stringify(styleGroups.haderTableStyle || {})),
+            headerTableStyle: encodeURIComponent(JSON.stringify(styleGroups.headerTableStyle || {})),
             rowTableStyle: encodeURIComponent(JSON.stringify(styleGroups.rowTableStyle || {})),
             tableStyle: encodeURIComponent(JSON.stringify(styleGroups.tableStyle || {})),
             bodyStyle: encodeURIComponent(JSON.stringify(styleGroups.bodyStyle || {})),
@@ -1542,7 +1507,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             // Update styleGroups
-            styleGroups.haderTableStyle = template.haderTableStyle || {};
+            styleGroups.headerTableStyle = template.headerTableStyle || {};
             styleGroups.rowTableStyle = template.rowTableStyle || {};
             styleGroups.tableStyle = template.tableStyle || {};
             styleGroups.columnWidths = template.columnWidths || [];
@@ -1553,10 +1518,8 @@ document.addEventListener("DOMContentLoaded", () => {
             if (typeof applyStyleGroupsToForm === 'function') {
                 applyStyleGroupsToForm();
             }
-            console.log("sssss", styleGroups);
             // Preview otomatis
             generatePreview();
-
             console.log('Template berhasil dimuat');
         } catch (error) {
             console.error('Load Template Error:', error);
@@ -1759,8 +1722,8 @@ document.addEventListener("DOMContentLoaded", () => {
                             cell.height = `${newHeightPercent.toFixed(2)}%`;
                         }
                     } else {
-                        if (!styleGroups.haderTableStyle) styleGroups.haderTableStyle = {};
-                        styleGroups.haderTableStyle['height'] = `${newHeightPx}px`;
+                        if (!styleGroups.headerTableStyle) styleGroups.headerTableStyle = {};
+                        styleGroups.headerTableStyle['height'] = `${newHeightPx}px`;
                     }
                 }
 
@@ -1875,9 +1838,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Panggil ulang update tampilan cell individual jika perlu
             if (section === "header") {
-                updateSingleHeaderCellStyle(rowIndex, cellIndex);
+                updateSingleCellStyle(rowIndex, cellIndex);
             } else {
-                updateSingleFooterCellStyle(rowIndex, cellIndex);
+                updateSingleCellStyle(rowIndex, cellIndex);
             }
         }
 

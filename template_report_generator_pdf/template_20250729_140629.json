@@ -1,5 +1,5 @@
 {
-    "query": "SELECT * FROM pencatatan",
+    "query": "SELECT * FROM pencatatan LIMIT 1",
     "headerTableStyle": {
         "font-size": "16px",
         "font-weight": "700",
@@ -36,7 +36,6 @@
     "fontStyle": "font-family: Arial, sans-serif;",
     "paperSize": "A4",
     "paperOrientation": "portrait",
-    "footer": "",
     "columnWidths": [],
     "customHeaders": {
         "id": "id",
@@ -65,6 +64,164 @@
         "margin-left": "20px"
     },
     "headerStyle": {
+        "rows": [
+            [
+                {
+                    "content": "Cell 1",
+                    "tag": "div",
+                    "colspan": 1,
+                    "rowspan": 1,
+                    "width": "33.33%",
+                    "height": "27px",
+                    "styles": {
+                        "width": "100%",
+                        "height": "100%",
+                        "position": "relative",
+                        "cursor": "default",
+                        "text-align": "center",
+                        "font-size": "16px",
+                        "font-weight": "700",
+                        "background-color": "rgb(255, 255, 255)",
+                        "color": "rgb(0, 0, 0)",
+                        "box-sizing": "border-box",
+                        "margin": "0px",
+                        "white-space": "normal",
+                        "word-break": "break-word",
+                        "overflow-wrap": "anywhere",
+                        "vertical-align": "top"
+                    }
+                },
+                {
+                    "content": "Cell 2",
+                    "tag": "div",
+                    "colspan": 1,
+                    "rowspan": 1,
+                    "width": "33.33%",
+                    "height": "27px",
+                    "styles": {
+                        "width": "100%",
+                        "height": "100%",
+                        "position": "relative",
+                        "cursor": "default",
+                        "text-align": "center",
+                        "font-size": "16px",
+                        "font-weight": "700",
+                        "background-color": "rgb(255, 255, 255)",
+                        "color": "rgb(0, 0, 0)",
+                        "box-sizing": "border-box",
+                        "margin": "0px",
+                        "white-space": "normal",
+                        "word-break": "break-word",
+                        "overflow-wrap": "anywhere",
+                        "vertical-align": "top"
+                    }
+                },
+                {
+                    "content": "Cell 3",
+                    "tag": "div",
+                    "colspan": 1,
+                    "rowspan": 1,
+                    "width": "33.33%",
+                    "height": "27px",
+                    "styles": {
+                        "width": "100%",
+                        "height": "100%",
+                        "position": "relative",
+                        "cursor": "default",
+                        "text-align": "center",
+                        "font-size": "16px",
+                        "font-weight": "700",
+                        "background-color": "rgb(255, 255, 255)",
+                        "color": "rgb(0, 0, 0)",
+                        "box-sizing": "border-box",
+                        "margin": "0px",
+                        "white-space": "normal",
+                        "word-break": "break-word",
+                        "overflow-wrap": "anywhere",
+                        "vertical-align": "top"
+                    }
+                }
+            ],
+            [
+                {
+                    "content": "Cell 4",
+                    "tag": "div",
+                    "colspan": 1,
+                    "rowspan": 1,
+                    "width": "33.33%",
+                    "height": "27px",
+                    "styles": {
+                        "width": "100%",
+                        "height": "100%",
+                        "position": "relative",
+                        "cursor": "default",
+                        "text-align": "center",
+                        "font-size": "16px",
+                        "font-weight": "700",
+                        "background-color": "rgb(255, 255, 255)",
+                        "color": "rgb(0, 0, 0)",
+                        "box-sizing": "border-box",
+                        "margin": "0px",
+                        "white-space": "normal",
+                        "word-break": "break-word",
+                        "overflow-wrap": "anywhere",
+                        "vertical-align": "top"
+                    }
+                },
+                {
+                    "content": "Cell 5",
+                    "tag": "div",
+                    "colspan": 1,
+                    "rowspan": 1,
+                    "width": "33.33%",
+                    "height": "27px",
+                    "styles": {
+                        "width": "100%",
+                        "height": "100%",
+                        "position": "relative",
+                        "cursor": "default",
+                        "text-align": "center",
+                        "font-size": "16px",
+                        "font-weight": "700",
+                        "background-color": "rgb(255, 255, 255)",
+                        "color": "rgb(0, 0, 0)",
+                        "box-sizing": "border-box",
+                        "margin": "0px",
+                        "white-space": "normal",
+                        "word-break": "break-word",
+                        "overflow-wrap": "anywhere",
+                        "vertical-align": "top"
+                    }
+                },
+                {
+                    "content": "Cell 6",
+                    "tag": "div",
+                    "colspan": 1,
+                    "rowspan": 1,
+                    "width": "33.33%",
+                    "height": "27px",
+                    "styles": {
+                        "width": "100%",
+                        "height": "100%",
+                        "position": "relative",
+                        "cursor": "default",
+                        "text-align": "center",
+                        "font-size": "16px",
+                        "font-weight": "700",
+                        "background-color": "rgb(255, 255, 255)",
+                        "color": "rgb(0, 0, 0)",
+                        "box-sizing": "border-box",
+                        "margin": "0px",
+                        "white-space": "normal",
+                        "word-break": "break-word",
+                        "overflow-wrap": "anywhere",
+                        "vertical-align": "top"
+                    }
+                }
+            ]
+        ]
+    },
+    "footerStyle": {
         "rows": [
             [
                 {

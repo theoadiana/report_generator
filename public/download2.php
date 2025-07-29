@@ -161,7 +161,7 @@ function buildDesignerFromRequest(): PDFReportDesigner {
         return $default;
     }
     
-    $haderTableStyle = getStyleFromQuery('haderTableStyle', 'font-size: 14px; font-weight: bold;');
+    $headerTableStyle = getStyleFromQuery('headerTableStyle', 'font-size: 14px; font-weight: bold;');
     $rowTableStyle = getStyleFromQuery('rowTableStyle', 'font-size: 12px;');
     $tableStyle = getStyleFromQuery('tableStyle', 'width: 100%; border-collapse: collapse;');
     $paperSize = $_GET['paperSize'] ?? 'A4';
@@ -184,7 +184,7 @@ function buildDesignerFromRequest(): PDFReportDesigner {
     }
 
     $designer = new PDFReportDesigner();
-    $designer->setHeaderTableStyle($haderTableStyle);
+    $designer->setHeaderTableStyle($headerTableStyle);
     $designer->setRowTableStyle($rowTableStyle);
     $designer->setTableStyle($tableStyle);
     $designer->setCustomHeaders($customHeaders);
