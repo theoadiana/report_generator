@@ -81,7 +81,7 @@ class PDFReportDesigner
 
                             // Ubah border jadi 1px solid warna bodyStyle
                             if (in_array($key, ['border', 'border-top', 'border-right', 'border-bottom', 'border-left'])) {
-                                // $cellStyles[$key] = '1px solid ' . $bgColor;
+                                $cellStyles[$key] = '0px solid ' . $bgColor;
                             } else {
                                 $cellStyles[$key] = $value;
                             }
