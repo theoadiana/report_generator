@@ -384,7 +384,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const width = totalWidth
                     ? ((widthPx / totalWidth) * 100).toFixed(2) + '%'
                     : 'auto';
-                const height = heightPx + 'px';
+                const height = heightPx;
 
                 // Gabungkan style inline dari td dan elemen anak pertama
                 const styleObj = {};
@@ -464,22 +464,22 @@ document.addEventListener("DOMContentLoaded", () => {
             const td = e.target.closest("td");
             const table = td?.closest("table");
             if (!td || !table) return;
-    
+
             const isHeader = table.id === "table_header_style";
             const isFooter = table.id === "table_footer_style";
             const group = isHeader ? "headerStyle" : isFooter ? "footerStyle" : null;
             if (!group) return;
-    
+
             const rowIndex = td.parentElement.rowIndex;
             const cellIndex = td.cellIndex;
-    
+
             const cell = styleGroups?.[group]?.rows?.[rowIndex]?.[cellIndex];
             if (!cell) return;
-    
+
             cell.content = e.target.textContent;
         }
     });
-    
+
 
     function updateStyleGroupsFromInputs() {
         document.querySelectorAll('[data-style-group]').forEach(input => {
@@ -592,7 +592,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     return `${key}:${value};`;
                 }).join(' ');
 
-                const tdStyle = `width:${width}px; height:${height}px; border:1px solid #000; position: relative;`;
+                const tdStyle = `width:${width}; height:${height}px; border:1px solid #000; position: relative;`;
 
                 return `<td ${colspan} ${rowspan} style="${tdStyle}">
                                     <${tag} id="${cellId}" ${editable}
@@ -628,9 +628,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     <thead id="table_header_tableStyle">
                         <tr>
                             ${headers.map(header => {
-                                const customHeader = manager.selectors[`header_${header}`]?.content || header;
-                                return `<th id="header_${header}" contentEditable="true" class="generatorPDF-th">${customHeader}</th>`;
-                            }).join('')}
+            const customHeader = manager.selectors[`header_${header}`]?.content || header;
+            return `<th id="header_${header}" contentEditable="true" class="generatorPDF-th">${customHeader}</th>`;
+        }).join('')}
                         </tr>
                     </thead>
                     <tbody id="table_data_body">
@@ -679,9 +679,6 @@ document.addEventListener("DOMContentLoaded", () => {
             makeTableResizable(footerTable);
         }
 
-        // 🔽 Aktifkan drag & drop untuk headerStyle
-        enableDragAndDrop("table_header_style");
-        enableDragAndDrop("table_footer_style");
         // 🔽 Buat semua headerStyle teks bisa disimpan ke styleGroups setelah diedit
         styleGroups.headerStyle.rows.forEach((row, rowIndex) => {
             row.forEach((cell, colIndex) => {
@@ -715,6 +712,7 @@ document.addEventListener("DOMContentLoaded", () => {
         injectCellControls("table_footer_style");
         enableDragAndDrop("table_header_style");
         enableDragAndDrop("table_footer_style");
+        console.log(html);
         // makeTableResizable(document.getElementById("table_header_style"));
         // makeTableResizable(document.getElementById("table_footer_style"));
     }
@@ -723,21 +721,21 @@ document.addEventListener("DOMContentLoaded", () => {
     function enableDragAndDrop(tableId = "table_header_style") {
         const table = document.getElementById(tableId);
         if (!table) return;
-    
+
         let dragSrcTd = null;
-    
+
         table.querySelectorAll("td").forEach(td => {
             td.setAttribute("draggable", false);
             td.style.cursor = "default";
             td.style.position = "relative";
-    
+
             let dragHandle = td.querySelector(".drag-handle");
             if (!dragHandle) {
                 dragHandle = document.createElement("div");
                 dragHandle.className = "drag-handle";
                 dragHandle.title = "Geser untuk memindahkan cell";
                 dragHandle.innerHTML = "⠿";
-    
+
                 Object.assign(dragHandle.style, {
                     position: "absolute",
                     top: "2px",
@@ -750,23 +748,23 @@ document.addEventListener("DOMContentLoaded", () => {
                     userSelect: "none",
                     lineHeight: "1"
                 });
-    
+
                 td.appendChild(dragHandle);
             }
-    
+
             dragHandle.setAttribute("draggable", true);
-    
+
             dragHandle.addEventListener("dragstart", function (e) {
                 if (PDFDesigner.isResizing) {
                     e.preventDefault();
                     return;
                 }
-    
+
                 dragSrcTd = td;
                 td.classList.add("dragging-td");
                 e.dataTransfer.effectAllowed = "move";
                 e.dataTransfer.setData("text/plain", "dragging");
-    
+
                 // Ghost image
                 const ghost = td.cloneNode(true);
                 ghost.classList.remove("dragging-td");
@@ -779,59 +777,59 @@ document.addEventListener("DOMContentLoaded", () => {
                 ghost.style.boxSizing = "border-box";
                 ghost.style.width = `${td.offsetWidth}px`;
                 ghost.style.height = `${td.offsetHeight}px`;
-    
+
                 document.body.appendChild(ghost);
                 e.dataTransfer.setDragImage(ghost, 0, 0);
                 setTimeout(() => document.body.removeChild(ghost), 0);
             });
-    
+
             dragHandle.addEventListener("dragend", function () {
                 if (dragSrcTd) {
                     dragSrcTd.classList.remove("dragging-td");
                     dragSrcTd = null;
                 }
             });
-    
+
             td.addEventListener("dragover", function (e) {
                 if (PDFDesigner.isResizing) return;
                 e.preventDefault();
                 e.dataTransfer.dropEffect = "move";
             });
-    
+
             td.addEventListener("dragenter", function () {
                 if (!PDFDesigner.isResizing) {
                     this.classList.add("drag-over");
                 }
             });
-    
+
             td.addEventListener("dragleave", function () {
                 this.classList.remove("drag-over");
             });
-    
+
             td.addEventListener("drop", function (e) {
                 if (PDFDesigner.isResizing || !dragSrcTd || dragSrcTd === this) return;
-    
+
                 e.preventDefault();
                 e.stopPropagation();
                 this.classList.remove("drag-over");
-    
+
                 const targetTd = this;
-    
+
                 // Simpan ukuran masing-masing sebelum swap
                 const srcWidth = dragSrcTd.style.width;
                 const srcHeight = dragSrcTd.style.height;
                 const targetWidth = targetTd.style.width;
                 const targetHeight = targetTd.style.height;
-    
+
                 // Tukar innerHTML
                 const tempHTML = dragSrcTd.innerHTML;
                 dragSrcTd.innerHTML = targetTd.innerHTML;
                 targetTd.innerHTML = tempHTML;
-    
+
                 // Tukar style (tanpa width & height)
                 const tempStyle = { ...dragSrcTd.style };
                 const targetStyle = { ...targetTd.style };
-    
+
                 for (let i = 0; i < dragSrcTd.style.length; i++) {
                     const prop = dragSrcTd.style[i];
                     if (prop !== "width" && prop !== "height") {
@@ -839,7 +837,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         targetTd.style.setProperty(prop, val);
                     }
                 }
-    
+
                 for (let i = 0; i < targetStyle.length; i++) {
                     const prop = targetStyle[i];
                     if (prop !== "width" && prop !== "height") {
@@ -847,46 +845,52 @@ document.addEventListener("DOMContentLoaded", () => {
                         dragSrcTd.style.setProperty(prop, val);
                     }
                 }
-    
+
                 // Kembalikan ukuran asli
                 dragSrcTd.style.width = srcWidth;
                 dragSrcTd.style.height = srcHeight;
                 targetTd.style.width = targetWidth;
                 targetTd.style.height = targetHeight;
-    
+
                 // ✅ Tambahan: Tukar data di styleGroups
                 const isHeader = table.id === "table_header_style";
                 const styleKey = isHeader ? "headerStyle" : "footerStyle";
-    
+
                 const srcRow = dragSrcTd.parentElement.rowIndex;
                 const srcCol = dragSrcTd.cellIndex;
                 const targetRow = targetTd.parentElement.rowIndex;
                 const targetCol = targetTd.cellIndex;
-    
+
                 const srcCellData = styleGroups[styleKey]?.rows?.[srcRow]?.[srcCol];
                 const targetCellData = styleGroups[styleKey]?.rows?.[targetRow]?.[targetCol];
-    
+
                 if (srcCellData && targetCellData) {
-                    const temp = structuredClone ? structuredClone(srcCellData) : JSON.parse(JSON.stringify(srcCellData));
-                    styleGroups[styleKey].rows[srcRow][srcCol] = targetCellData;
-                    styleGroups[styleKey].rows[targetRow][targetCol] = temp;
+                    const tempContent = srcCellData.content;
+                    const tempStyles = { ...srcCellData.styles };
+                
+                    srcCellData.content = targetCellData.content;
+                    srcCellData.styles = { ...targetCellData.styles };
+                
+                    targetCellData.content = tempContent;
+                    targetCellData.styles = tempStyles;
                 }
-    
+
                 makeTableResizable(table);
+                injectCellControls(tableId);
                 enableDragAndDrop(tableId);
             });
-    
+
             td.addEventListener("mousemove", function (e) {
                 const isInEditable = e.target.closest("[contenteditable='true']");
                 td.style.cursor = isInEditable ? "text" : "default";
             });
-    
+
             td.addEventListener("mouseleave", function () {
                 td.style.cursor = "default";
             });
         });
     }
-    
+
 
 
 
@@ -1166,10 +1170,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const result = rgb.match(/\d+/g);
         if (!result || result.length < 3) return null;
         const hex = result
-            .slice(0,3)
+            .slice(0, 3)
             .map(x => {
                 const hexPart = parseInt(x).toString(16);
-                return hexPart.length === 1? "0" + hexPart : hexPart;
+                return hexPart.length === 1 ? "0" + hexPart : hexPart;
             })
             .join("");
         return "#" + hex;
@@ -1177,7 +1181,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     document.addEventListener("click", (event) => {
-        console.log("HEIGHT : " , styleGroups.headerStyle.rows[0][0].height);
         const td = event.target.closest("td");
         const table = td?.closest("table");
 
@@ -1227,7 +1230,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
                 if (attr.indexOf("color") !== -1 && typeof value === 'string' && value.startsWith("rgb")) {
                     value = rgbToHex(value);
-                }                
+                }
                 input.value = value;
             });
         }
@@ -1535,6 +1538,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // Preview otomatis
             generatePreview();
             console.log('Template berhasil dimuat');
+            console.log(styleGroups.headerStyle);
         } catch (error) {
             console.error('Load Template Error:', error);
             alert('Gagal memuat template. Silakan coba lagi.');
@@ -1730,10 +1734,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                         const cell = styleObj.rows?.[rowIndex]?.[colIndex];
                         if (cell) {
-                            const tr = col.parentElement;
-                            const rowHeight = tr.offsetHeight || 1;
-                            const newHeightPercent = (newHeightPx / rowHeight) * 100;
-                            cell.height = `${newHeightPercent.toFixed(2)}%`;
+                            cell.height = `${newHeightPx}`; // Simpan tinggi dalam px, bukan persen
                         }
                     } else {
                         if (!styleGroups.headerTableStyle) styleGroups.headerTableStyle = {};
