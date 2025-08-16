@@ -867,10 +867,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (srcCellData && targetCellData) {
                     const tempContent = srcCellData.content;
                     const tempStyles = { ...srcCellData.styles };
-                
+
                     srcCellData.content = targetCellData.content;
                     srcCellData.styles = { ...targetCellData.styles };
-                
+
                     targetCellData.content = tempContent;
                     targetCellData.styles = tempStyles;
                 }
@@ -1125,10 +1125,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
-        // Jika semua cell kosong, tampilkan tombol tambah pertama
-        const isEmpty =
-            (!styleGroups.headerStyle?.rows?.length || styleGroups.headerStyle.rows.every(row => !row.length)) ||
-            (!styleGroups.footerStyle?.rows?.length || styleGroups.footerStyle.rows.every(row => !row.length));
+        // Jika semua cell kosong pada table yang sedang diproses, tampilkan tombol tambah pertama
+        let isEmpty = false;
+        if (tableId === "table_header_style") {
+            isEmpty = !styleGroups.headerStyle?.rows?.length ||
+                styleGroups.headerStyle.rows.every(row => !row.length);
+        } else if (tableId === "table_footer_style") {
+            isEmpty = !styleGroups.footerStyle?.rows?.length ||
+                styleGroups.footerStyle.rows.every(row => !row.length);
+        }
+
 
         if (isEmpty) {
             const tbody = table.querySelector("tbody") || table.createTBody();
