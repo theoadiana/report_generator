@@ -8,47 +8,74 @@ require_once __DIR__ . '/public/download2.php';
 <head>
     <meta charset="UTF-8">
     <title>PDF Report Designer</title>
+    <style>
+        .tab-content * {
+            font-size: 12px !important;
+        }
+
+        .tab-content input,
+        .tab-content select {
+            padding: 1px 1px !important;
+            font-size: 12px !important;
+        }
+
+        .tab-content label {
+            font-size: 11px !important;
+        }
+    </style>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="module" defer src="assets/js/designPDF2.js"></script>
 </head>
 
 <body class="bg-gray-100">
-    <div class="bg-white shadow px-6 py-2 sticky top-0 z-50">
+    <div class="bg-white shadow px-3 py-1 sticky top-0 z-50">
         <!-- Header dengan Tabs -->
-        <div class="flex space-x-4 text-sm font-semibold">
-            <button class="tab-button text-gray-600 hover:text-black py-2 px-3 border-b-2 border-transparent"
+        <div class="flex space-x-2 text-xs font-medium">
+            <button class="tab-button text-gray-600 hover:text-black py-1 px-2 border-b border-transparent"
                 data-tab="headerStyle">Header Style</button>
-            <button class="tab-button text-gray-600 hover:text-black py-2 px-3 border-b-2 border-transparent"
+            <button class="tab-button text-gray-600 hover:text-black py-1 px-2 border-b border-transparent"
                 data-tab="footerStyle">Footer Style</button>
-            <button class="tab-button text-gray-600 hover:text-black py-2 px-3 border-b-2 border-transparent"
+            <button class="tab-button text-gray-600 hover:text-black py-1 px-2 border-b border-transparent"
                 data-tab="paperSettings">Paper Settings</button>
-            <button class="tab-button text-gray-600 hover:text-black py-2 px-3 border-b-2 border-transparent"
+            <button class="tab-button text-gray-600 hover:text-black py-1 px-2 border-b border-transparent"
                 data-tab="headerTableStyle">Header Table Style</button>
-            <button class="tab-button text-gray-600 hover:text-black py-2 px-3 border-b-2 border-transparent"
+            <button class="tab-button text-gray-600 hover:text-black py-1 px-2 border-b border-transparent"
                 data-tab="rowTableStyle">Row Table Style</button>
-            <button class="tab-button text-gray-600 hover:text-black py-2 px-3 border-b-2 border-transparent"
+            <button class="tab-button text-gray-600 hover:text-black py-1 px-2 border-b border-transparent"
                 data-tab="tools">Tools</button>
-            <button class="tab-button text-gray-600 hover:text-black py-2 px-3 border-b-2 border-transparent"
+            <button class="tab-button text-gray-600 hover:text-black py-1 px-2 border-b border-transparent"
                 data-tab="query">Query</button>
             <button id="report_generator_downloadPDF" type="submit"
-                class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                class="bg-green-600 text-white px-2 py-1 rounded-sm hover:bg-green-700 text-xs">
                 Download PDF
             </button>
             <button id="report_generator_saveTemplatePDF" type="submit"
-                class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-                Save Template PDF
+                class="bg-green-600 text-white px-2 py-1 rounded-sm hover:bg-green-700 text-xs">
+                Save Template
             </button>
-            <select id="report_generator_templateSelector" class="border p-2 rounded">
+            <button id="report_generator_saveAsTemplatePDF"
+                class="bg-yellow-500 text-white px-2 py-1 rounded-sm hover:bg-yellow-600">
+                Save As Template
+            </button>
+            <select id="report_generator_templateSelector" class="border p-1 rounded-sm text-xs">
                 <option value="">Pilih Template</option>
             </select>
-            <button id="report_generator_loadTemplatePDF" class="ml-2 bg-blue-500 text-white p-2 rounded">Load
-                Template</button>
+            <button id="report_generator_editTemplatePDF"
+                class="ml-2 bg-blue-500 text-white px-2 py-1 rounded-sm text-xs hover:bg-blue-600">
+                Edit Template
+            </button>
+            <button id="report_generator_deleteTemplatePDF"
+                class="ml-2 bg-red-500 text-white px-2 py-1 rounded-sm text-xs hover:bg-red-600">
+                Delete Template
+            </button>
         </div>
+
 
         <!-- Container utama -->
         <div class="flex">
             <!-- Kontainer Tab Panel -->
-            <div class="w-full bg-white p-4 border-b space-y-4">
+            <div class="w-full bg-white p-1 border-b space-y-4">
                 <!-- Konten Header Style -->
                 <div class="tab-content hidden" data-content="headerStyle">
                     <div class="col-span-1">
@@ -200,6 +227,8 @@ require_once __DIR__ . '/public/download2.php';
                             data-style-group="bodyStyle" data-style-attr="margin-left">
                     </div>
                 </div>
+
+
                 <!-- Tab Header Table Style -->
                 <div class="tab-content hidden" data-content="headerTableStyle">
                     <div>

@@ -10,7 +10,7 @@ require_once __DIR__ . "/public/download.php";
 
 <body>
     <h1>Export Laporan</h1>
-    <a href="designPDF.php">Design PDF</a>
+    <a href="designPDF2.php">Design PDF</a>
     <br>
     <a href="designExcel.php">Design Excel</a>
     <br>

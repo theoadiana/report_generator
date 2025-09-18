@@ -4,8 +4,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const manager = new SelectorManager();
     const downloadButton = document.getElementById("report_generator_downloadPDF");
     const saveTemplateButton = document.getElementById("report_generator_saveTemplatePDF");
+    const saveAsTemplateButton = document.getElementById("report_generator_saveAsTemplatePDF");
+    const deleteTemplateButton = document.getElementById("report_generator_deleteTemplatePDF");
+    const editTemplateButton = document.getElementById("report_generator_editTemplatePDF");
     const templateSelector = document.getElementById('report_generator_templateSelector');
-    const loadTemplateButton = document.getElementById("report_generator_loadTemplatePDF");
     const queryExecuteButton = document.getElementById("report_generator_queryExecute");
     let cachedData = [];
     toggleStyleInputs('headerStyleCell', false);
@@ -58,7 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        console.log('Data yang dikirim ke backend:', { query: query });
+        // console.log('Data yang dikirim ke backend:', { query: query });
 
         fetch('public/download2.php', {
             method: 'POST',
@@ -348,7 +350,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             styleGroups.columnWidths = Array.from({ length: columnCount }, () => percentage);
 
-            console.log("Column widths set (percent-based):", styleGroups.columnWidths);
+            // console.log("Column widths set (percent-based):", styleGroups.columnWidths);
         } catch (error) {
             console.error("Gagal mengambil data untuk columnWidths:", error);
         }
@@ -712,7 +714,7 @@ document.addEventListener("DOMContentLoaded", () => {
         injectCellControls("table_footer_style");
         enableDragAndDrop("table_header_style");
         enableDragAndDrop("table_footer_style");
-        console.log(html);
+        // console.log(html);
         // makeTableResizable(document.getElementById("table_header_style"));
         // makeTableResizable(document.getElementById("table_footer_style"));
     }
@@ -1468,7 +1470,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function downloadPDF() {
         const params = buildPDFParams({ type: 'pdf' });
         const url = `/public/download2.php?${params.toString()}`;
-        console.log("Download URL:", url);
+        // console.log("Download URL:", url);
 
         fetch(url)
             .then(response => {
@@ -1488,20 +1490,309 @@ document.addEventListener("DOMContentLoaded", () => {
             });
     }
 
-    function saveTemplate() {
-        const params = buildPDFParams({ action: 'save_template_PDF' });
-        const url = `/public/download2.php?${params.toString()}`;
-
-        fetch(url)
-            .then(response => response.text())
-            .then(result => {
-                alert('Template berhasil disimpan!');
-                console.log(result);
-            })
-            .catch(error => {
-                console.error('Save template error:', error);
-            });
+    function showCustomAlert(
+        message,
+        options = { okText: "OK", cancelText: "Cancel", showCancel: true }
+    ) {
+        return new Promise((resolve) => {
+            // inject modal kalau belum ada
+            if (!document.getElementById("customAlert")) {
+                const modal = document.createElement("div");
+                modal.id = "customAlert";
+                modal.style.cssText = `
+                    display:none; position:fixed; inset:0;
+                    background:rgba(0,0,0,0.5); z-index:10000;
+                    display:flex; align-items:center; justify-content:center;
+                    font-family: 'Inter', sans-serif;
+                `;
+                modal.innerHTML = `
+                    <div style="
+                        background:#fff; padding:24px; border-radius:12px;
+                        width:320px; max-width:90%;
+                        box-shadow:0 8px 20px rgba(0,0,0,0.15);
+                        animation:fadeIn 0.2s ease-out;
+                    ">
+                        <p id="alertMessage"
+                            style="margin-bottom:20px; font-size:15px; color:#111; line-height:1.5;">
+                        </p>
+                        <div id="alertButtons"
+                            style="text-align:right; display:flex; justify-content:flex-end; gap:8px;">
+                        </div>
+                    </div>
+                `;
+    
+                // animasi fadeIn
+                const style = document.createElement("style");
+                style.innerHTML = `
+                    @keyframes fadeIn {
+                        from { opacity:0; transform:scale(0.95); }
+                        to { opacity:1; transform:scale(1); }
+                    }
+                `;
+                document.head.appendChild(style);
+    
+                document.body.appendChild(modal);
+            }
+    
+            const modal = document.getElementById("customAlert");
+            const msgEl = document.getElementById("alertMessage");
+            const btnContainer = document.getElementById("alertButtons");
+    
+            msgEl.textContent = message;
+            btnContainer.innerHTML = ""; // reset tombol
+    
+            // tombol Cancel (jika diizinkan)
+            if (options.showCancel) {
+                const btnCancel = document.createElement("button");
+                btnCancel.textContent = options.cancelText || "Cancel";
+                btnCancel.style.cssText = `
+                    background:#f3f4f6; border:none; padding:6px 14px;
+                    border-radius:6px; font-size:14px; cursor:pointer;
+                `;
+                btnCancel.onclick = () => {
+                    modal.style.display = "none";
+                    resolve(false);
+                };
+                btnContainer.appendChild(btnCancel);
+            }
+    
+            // tombol OK
+            const btnOk = document.createElement("button");
+            btnOk.textContent = options.okText || "OK";
+            btnOk.style.cssText = `
+                background:#2563eb; color:white; border:none;
+                padding:6px 14px; border-radius:6px; font-size:14px;
+                cursor:pointer;
+            `;
+            btnOk.onclick = () => {
+                modal.style.display = "none";
+                resolve(true);
+            };
+            btnContainer.appendChild(btnOk);
+    
+            modal.style.display = "flex";
+        });
     }
+    
+    
+
+    // === Utility: Custom Prompt Modern ===
+    async function showCustomPrompt(title = "Masukkan nama file", templates = []) {
+        return new Promise((resolve, reject) => {
+            // inject modal kalau belum ada
+            if (!document.getElementById("customPrompt")) {
+                const modal = document.createElement("div");
+                modal.id = "customPrompt";
+                modal.style.cssText = `
+                    display:none; position:fixed; inset:0;
+                    background:rgba(0,0,0,0.5); z-index:9999;
+                    display:flex; align-items:center; justify-content:center;
+                    font-family: 'Inter', sans-serif;
+                `;
+                modal.innerHTML = `
+                    <div style="
+                        background:#fff; padding:24px; border-radius:12px;
+                        width:350px; max-width:90%;
+                        box-shadow:0 8px 20px rgba(0,0,0,0.15);
+                        animation:fadeIn 0.2s ease-out;
+                    ">
+                        <h3 style="margin-bottom:12px; font-size:16px; font-weight:600; color:#111;">
+                            ${title}
+                        </h3>
+                        <input type="text" id="promptInput" placeholder="Nama file..."
+                            style="
+                                width:100%; padding:10px 12px; border:1px solid #ddd;
+                                border-radius:8px; outline:none;
+                                font-size:14px; margin-bottom:8px;
+                                transition:border 0.2s;
+                            "
+                        >
+                        <ul id="promptSuggestions"
+                            style="
+                                max-height:150px; overflow-y:auto;
+                                border:1px solid #eee; border-radius:8px;
+                                margin:6px 0; padding:0;
+                                list-style:none; font-size:14px;
+                            ">
+                        </ul>
+                        <div style="margin-top:16px; text-align:right; display:flex; justify-content:flex-end; gap:8px;">
+                            <button id="promptCancel"
+                                style="
+                                    background:#f3f4f6; border:none; padding:6px 14px;
+                                    border-radius:6px; font-size:14px; cursor:pointer;
+                                    transition:background 0.2s;
+                                "
+                            >Cancel</button>
+                            <button id="promptOk"
+                                style="
+                                    background:#2563eb; color:white; border:none;
+                                    padding:6px 14px; border-radius:6px; font-size:14px;
+                                    cursor:pointer; transition:background 0.2s;
+                                "
+                            >Simpan</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+    
+                // style animasi
+                const style = document.createElement("style");
+                style.innerHTML = `
+                    @keyframes fadeIn {
+                        from { opacity:0; transform:scale(0.95); }
+                        to { opacity:1; transform:scale(1); }
+                    }
+                    #promptSuggestions li {
+                        padding:8px 12px; cursor:pointer;
+                        transition: background 0.2s;
+                    }
+                    #promptSuggestions li:hover {
+                        background:#f9fafb;
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+    
+            const modal = document.getElementById("customPrompt");
+            const input = document.getElementById("promptInput");
+            const list = document.getElementById("promptSuggestions");
+            const btnOk = document.getElementById("promptOk");
+            const btnCancel = document.getElementById("promptCancel");
+    
+            modal.style.display = "flex";
+            input.value = "";
+            list.innerHTML = "";
+            input.focus();
+    
+            function renderSuggestions(value) {
+                list.innerHTML = "";
+                if (!value) return;
+                const filtered = templates.filter(t => t.toLowerCase().includes(value.toLowerCase()));
+                filtered.forEach(t => {
+                    const li = document.createElement("li");
+                    li.textContent = t.replace(".json", "");
+                    li.onclick = () => {
+                        input.value = li.textContent;
+                        list.innerHTML = "";
+                    };
+                    list.appendChild(li);
+                });
+            }
+    
+            input.oninput = () => renderSuggestions(input.value);
+    
+            btnOk.onclick = () => {
+                modal.style.display = "none";
+                resolve(input.value.trim());
+            };
+            btnCancel.onclick = () => {
+                modal.style.display = "none";
+                reject("dibatalkan");
+            };
+        });
+    }
+    
+
+    // === SAVE TEMPLATE pakai customPrompt ===
+    async function saveTemplate() {
+        try {
+            // ambil daftar template dulu
+            const listResponse = await fetch('/public/download2.php?action=get_template_list');
+            if (!listResponse.ok) throw new Error('Gagal mengambil daftar template');
+            const templates = await listResponse.json();
+
+            // pakai customPrompt
+            let filename = await showCustomPrompt("Simpan Template", "Nama file...", templates);
+            if (filename && filename.endsWith(".json")) {
+                filename = filename.replace(".json", "");
+            }
+
+            // kalau nama sudah ada → auto tambah (1), (2), ...
+            if (filename) {
+                let newName = filename;
+                let counter = 1;
+                while (templates.includes(newName + ".json")) {
+                    newName = `${filename}(${counter})`;
+                    counter++;
+                }
+                filename = newName;
+            }
+
+            const params = buildPDFParams({ action: 'save_template_PDF' });
+            if (filename) params.append("filename", filename);
+
+            const url = `/public/download2.php?${params.toString()}`;
+
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Gagal menyimpan template');
+
+            const result = await response.text();
+            alert(`Template berhasil disimpan sebagai: ${filename || "default"}`);
+            // console.log(result);
+
+            // refresh dropdown + pilih otomatis
+            await fetchTemplateList();
+            if (filename) {
+                const selector = document.getElementById("report_generator_templateSelector");
+                selector.value = filename + ".json";
+                loadTemplate(selector.value);
+            }
+
+        } catch (error) {
+            console.error('Save template error:', error);
+        }
+    }
+
+
+    // Save As Template (duplikasi kalau nama sudah ada)
+    async function saveAsTemplate() {
+        try {
+            const listResponse = await fetch('/public/download2.php?action=get_template_list');
+            if (!listResponse.ok) throw new Error('Gagal mengambil daftar template');
+            const templates = await listResponse.json();
+    
+            let filename = await showCustomPrompt("Simpan Template Baru", templates);
+            if (!filename) return;
+    
+            // pastikan tanpa ekstensi .json
+            if (filename.endsWith(".json")) {
+                filename = filename.replace(".json", "");
+            }
+    
+            // jika nama sudah ada, minta konfirmasi overwrite
+            if (templates.includes(filename + ".json")) {
+                const overwrite = await showCustomAlert(
+                    `Template dengan nama "${filename}" sudah ada.\nApakah Anda ingin menggantinya?`,
+                    { okText: "Ya, Ganti", cancelText: "Batal", showCancel: true }
+                );
+                if (!overwrite) return; // batal overwrite
+            }
+    
+            const params = buildPDFParams({ action: 'save_template_PDF' });
+            params.append("filename", filename);
+    
+            const url = `/public/download2.php?${params.toString()}`;
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Gagal menyimpan template');
+    
+            await showCustomAlert(`Template berhasil disimpan sebagai: ${filename}`, { showCancel: false });
+    
+            await fetchTemplateList();
+    
+            // set selector ke nama baru
+            const selector = document.getElementById("report_generator_templateSelector");
+            selector.value = filename + ".json";
+            loadTemplate(selector.value);
+    
+        } catch (e) {
+            console.error("Save As Template Error:", e);
+            await showCustomAlert("Terjadi kesalahan saat menyimpan template.", { showCancel: false });
+        }
+    }
+    
+    
+
+
 
     async function loadTemplate(filename) {
         try {
@@ -1509,7 +1800,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!response.ok) throw new Error('Gagal memuat template');
 
             const template = await response.json();
-            console.log("template", template);
+            // console.log("template", template);
             if (!template) throw new Error('Template kosong');
 
             // Set selector values
@@ -1543,8 +1834,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Preview otomatis
             generatePreview();
-            console.log('Template berhasil dimuat');
-            console.log(styleGroups.headerStyle);
+            // console.log('Template berhasil dimuat');
+            // console.log(styleGroups.headerStyle);
         } catch (error) {
             console.error('Load Template Error:', error);
             alert('Gagal memuat template. Silakan coba lagi.');
@@ -1557,7 +1848,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!response.ok) throw new Error('Gagal mengambil daftar template');
 
             const templates = await response.json();
-
+            // console.log("TEMPLATES : " + templates);
             // Bersihkan dropdown dan tambahkan opsi default
             templateSelector.innerHTML = '<option value="">Pilih Template</option>';
 
@@ -1575,6 +1866,94 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     fetchTemplateList();
+
+    async function editTemplate() {
+        const selectedValue = templateSelector.value;
+    
+        if (!selectedValue) {
+            showCustomAlert("Silakan pilih template yang ingin diedit.", { showCancel: false });
+            return;
+        }
+    
+        // Ambil daftar template dulu (supaya jadi array untuk showCustomPrompt)
+        let templates = [];
+        try {
+            const response = await fetch('/public/download2.php?action=get_template_list');
+            if (response.ok) {
+                templates = await response.json();
+            }
+        } catch (e) {
+            console.warn("Gagal load template list untuk prompt:", e);
+        }
+    
+        // Panggil prompt dengan array templates
+        showCustomPrompt(
+            `Masukkan nama baru untuk template "${selectedValue}":`,
+            templates, // ✅ ini array, bukan string
+        ).then(async (newName) => {
+            if (!newName || newName.trim() === "" || newName === selectedValue) {
+                return; // batal rename
+            }
+    
+            try {
+                const response = await fetch(`/public/download2.php?action=edit_template`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        oldName: selectedValue,
+                        newName: newName.trim()
+                    })
+                });
+    
+                const result = await response.json();
+    
+                if (result.success) {
+                    showCustomAlert(`Template berhasil diubah menjadi "${newName}".`);
+                    fetchTemplateList(); // refresh daftar template
+                } else {
+                    showCustomAlert(result.error || "Gagal mengubah nama template.");
+                }
+            } catch (error) {
+                console.error("Edit Template Error:", error);
+                showCustomAlert("Terjadi kesalahan saat mengubah nama template.");
+            }
+        }).catch(() => {
+            console.log("Rename dibatalkan");
+        });
+    }
+    
+    
+
+    async function deleteTemplate() {
+        const selectedValue = templateSelector.value;
+    
+        if (!selectedValue) {
+            showCustomAlert("Silakan pilih template yang ingin dihapus.", { showCancel: false });
+            return;
+        }        
+    
+        const confirmDelete = await showCustomAlert(
+            `Apakah Anda yakin ingin menghapus template "${selectedValue}"?`, { okText: "OK", cancelText: "Cancel", showCancel: true }
+        );
+    
+        if (!confirmDelete) return;
+    
+        try {
+            const response = await fetch(`/public/download2.php?action=delete_template&filename=${encodeURIComponent(selectedValue)}`);
+            const result = await response.json();
+    
+            if (result.success) {
+                alert(`Template "${selectedValue}" berhasil dihapus.`);
+                fetchTemplateList(); // refresh daftar template
+            } else {
+                alert(result.error || "Gagal menghapus template.");
+            }
+        } catch (error) {
+            console.error("Delete Template Error:", error);
+            alert("Terjadi kesalahan saat menghapus template.");
+        }
+    }
+    
 
     async function generatePreview() {
         const params = buildPDFParams();
@@ -1893,21 +2272,23 @@ document.addEventListener("DOMContentLoaded", () => {
         downloadPDF();
     });
 
-    loadTemplateButton.addEventListener('click', () => {
-        const selector = templateSelector;
-        const selectedValue = selector.value;
+    deleteTemplateButton.addEventListener("click", deleteTemplate);
+
+    templateSelector.addEventListener('change', () => {
+        const selectedValue = templateSelector.value;
 
         if (!selectedValue) {
-            alert('Silakan pilih template terlebih dahulu.');
-            return;
+            return; // kalau pilih default "Pilih Template"
         }
 
-        console.log('Template yang dipilih:', selectedValue);
+        // console.log('Template yang dipilih:', selectedValue);
 
-        // Load template
-        loadTemplate(selectedValue); // Load Template
+        // Auto load template
+        loadTemplate(selectedValue);
     });
 
 
+    editTemplateButton.addEventListener('click', editTemplate);
     saveTemplateButton.addEventListener('click', saveTemplate);
+    saveAsTemplateButton.addEventListener("click", saveAsTemplate);
 });

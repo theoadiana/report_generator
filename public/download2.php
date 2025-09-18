@@ -30,7 +30,7 @@ if (isset($_SESSION['report_query'])) {
 
 
 // ✅ Handle POST
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_GET['action'] !== 'edit_template') {
     header('Content-Type: application/json');
 
     $input = json_decode(file_get_contents('php://input'), true);
@@ -100,16 +100,65 @@ if (isset($_GET['type'])) {
 
 // Handle request save template (GET)
 if (isset($_GET['action']) && $_GET['action'] === 'save_template_PDF') {
-    header('Content-Type: text/plain');
+    header('Content-Type: application/json');
 
     $designer = buildDesignerFromRequest();
     $designer->setQuery($reportGenerator->getQuery());
-    // Simpan template
-    savePDFTemplate($designer->getTemplateAsArray());
 
-    echo 'Template berhasil disimpan.';
+    // Ambil nama file dari request jika ada
+    $filename = $_GET['filename'] ?? null;
+
+    // Simpan template
+    $savedFilename = savePDFTemplate($designer->getTemplateAsArray(), $filename);
+
+    echo json_encode([
+        'success' => true,
+        'message' => 'Template berhasil disimpan.',
+        'filename' => $savedFilename
+    ]);
     exit;
 }
+
+// Handle edit/rename template
+if (isset($_GET['action']) && $_GET['action'] === 'edit_template') {
+    header('Content-Type: application/json');
+
+    $templateDir = __DIR__ . '/../template_report_generator_pdf';
+
+    $input = json_decode(file_get_contents('php://input'), true);
+    $oldName = basename($input['oldName'] ?? '');
+    $newName = basename($input['newName'] ?? '');
+
+    if (!$oldName || !$newName) {
+        echo json_encode(['success' => false, 'error' => 'Nama template tidak valid.']);
+        exit;
+    }
+
+    // pastikan ekstensi .json
+    if (!str_ends_with($oldName, '.json')) $oldName .= '.json';
+    if (!str_ends_with($newName, '.json')) $newName .= '.json';
+
+    $oldPath = $templateDir . '/' . $oldName;
+    $newPath = $templateDir . '/' . $newName;
+
+    if (!file_exists($oldPath)) {
+        echo json_encode(['success' => false, 'error' => 'Template lama tidak ditemukan.']);
+        exit;
+    }
+
+    // jika file baru sudah ada, hapus dulu (overwrite)
+    if (file_exists($newPath)) {
+        unlink($newPath);
+    }
+
+    if (rename($oldPath, $newPath)) {
+        echo json_encode(['success' => true, 'newName' => $newName]);
+    } else {
+        echo json_encode(['success' => false, 'error' => 'Gagal mengganti nama template.']);
+    }
+    exit;
+}
+
 
 // Handle untuk mendapatkan daftar file template
 if (isset($_GET['action']) && $_GET['action'] === 'get_template_list') {
@@ -120,6 +169,27 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_template_list') {
     echo json_encode($templates);
     exit;
 }
+
+//Handle delete template
+if (isset($_GET['action']) && $_GET['action'] === 'delete_template' && isset($_GET['filename'])) {
+    header('Content-Type: application/json');
+
+    $templateDir = __DIR__ . '/../template_report_generator_pdf';
+    $filename = basename($_GET['filename']); // hindari path traversal
+    $filePath = $templateDir . '/' . $filename;
+
+    if (file_exists($filePath)) {
+        if (unlink($filePath)) {
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Gagal menghapus file.']);
+        }
+    } else {
+        echo json_encode(['success' => false, 'error' => 'Template tidak ditemukan.']);
+    }
+    exit;
+}
+
 
 // Handle untuk load template spesifik
 if (isset($_GET['action']) && $_GET['action'] === 'load_template' && isset($_GET['filename'])) {
