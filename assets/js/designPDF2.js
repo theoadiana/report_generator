@@ -2355,28 +2355,30 @@ ${styleTag}
         applyZoom();
     });
 
-    preview.addEventListener("auxclick", (event) => {
-        event.preventDefault(); // cegah scroll bawaan browser
+    preview.addEventListener("wheel", (event) => {
+        if (event.ctrlKey) {  
+            event.preventDefault(); // cegah zoom bawaan browser
     
-        let currentZoom = parseFloat(zoomSlider.value);
+            let currentZoom = parseFloat(zoomSlider.value);
     
-        if (event.deltaY < 0) {
-            // Scroll up → zoom in
-            currentZoom = Math.min(currentZoom + 2, parseFloat(zoomSlider.max));
-        } else {
-            // Scroll down → zoom out
-            currentZoom = Math.max(currentZoom - 2, parseFloat(zoomSlider.min));
+            if (event.deltaY < 0) {
+                // Scroll up → zoom in
+                currentZoom = Math.min(currentZoom + 2, parseFloat(zoomSlider.max));
+            } else {
+                // Scroll down → zoom out
+                currentZoom = Math.max(currentZoom - 2, parseFloat(zoomSlider.min));
+            }
+    
+            // Update slider & label
+            zoomSlider.value = currentZoom;
+            zoomLabel.textContent = `${currentZoom}%`;
+    
+            // Terapkan zoom ke canvas/preview
+            preview.style.transform = `scale(${currentZoom / 100})`;
+            preview.style.transformOrigin = "top center";
         }
+    }, { passive: false }); // supaya preventDefault bisa jalan
     
-        // Update slider & label
-        zoomSlider.value = currentZoom;
-        zoomLabel.textContent = `${currentZoom}%`;
-    
-        // Terapkan zoom
-        preview.style.transform = `scale(${currentZoom / 100})`;
-        preview.style.transformOrigin = "top center"; // biar zoom dari tengah atas
-    });
-
     applyZoom();
 
 
