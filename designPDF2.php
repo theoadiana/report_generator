@@ -46,28 +46,28 @@ require_once __DIR__ . '/public/download2.php';
                 data-tab="tools">Tools</button>
             <button class="tab-button text-gray-600 hover:text-black py-1 px-2 border-b border-transparent"
                 data-tab="query">Query</button>
+            <select id="report_generator_templateSelector" class="border p-1 rounded-sm text-xs">
+                <option value="">Pilih Template</option>
+            </select>
             <button id="report_generator_downloadPDF" type="submit"
                 class="bg-green-600 text-white px-2 py-1 rounded-sm hover:bg-green-700 text-xs">
                 Download PDF
             </button>
             <button id="report_generator_saveTemplatePDF" type="submit"
                 class="bg-green-600 text-white px-2 py-1 rounded-sm hover:bg-green-700 text-xs">
-                Save Template
+                Save
             </button>
             <button id="report_generator_saveAsTemplatePDF"
                 class="bg-yellow-500 text-white px-2 py-1 rounded-sm hover:bg-yellow-600">
-                Save As Template
+                Save As
             </button>
-            <select id="report_generator_templateSelector" class="border p-1 rounded-sm text-xs">
-                <option value="">Pilih Template</option>
-            </select>
             <button id="report_generator_editTemplatePDF"
                 class="ml-2 bg-blue-500 text-white px-2 py-1 rounded-sm text-xs hover:bg-blue-600">
-                Edit Template
+                Edit
             </button>
             <button id="report_generator_deleteTemplatePDF"
                 class="ml-2 bg-red-500 text-white px-2 py-1 rounded-sm text-xs hover:bg-red-600">
-                Delete Template
+                Delete
             </button>
         </div>
 
@@ -431,6 +431,9 @@ require_once __DIR__ . '/public/download2.php';
     </div>
     <!-- Area Canvas (Preview Data) -->
     <div id="preview" class="max-w-5xl mx-auto mt-6 shadow-lg"></div>
+
+    <!-- Footer Zoom Control -->
+    <div id="previewFooter" class="fixed bottom-0 left-0 w-full bg-white border-t shadow-inner flex justify-end items-center space-x-4 py-2 z-50"></div>
 
 
     <script>

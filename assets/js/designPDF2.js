@@ -9,6 +9,33 @@ document.addEventListener("DOMContentLoaded", () => {
     const editTemplateButton = document.getElementById("report_generator_editTemplatePDF");
     const templateSelector = document.getElementById('report_generator_templateSelector');
     const queryExecuteButton = document.getElementById("report_generator_queryExecute");
+
+    //zoom in zoom out variable
+    const preview = document.getElementById("preview");
+    const footer = document.getElementById("previewFooter");
+
+    // Inject HTML controls ke dalam footer
+    footer.innerHTML = `
+    <button id="zoomOut" class="w-6 h-6 flex items-center justify-center text-xs bg-gray-100 border border-gray-300 rounded-full hover:bg-gray-200 transition">-</button>
+    
+    <input 
+        type="range" 
+        id="zoomSlider" 
+        min="10" max="300" value="100" step="0.5" 
+        class="w-32 h-2 appearance-none bg-gray-200 rounded-lg overflow-hidden cursor-pointer accent-indigo-500">
+    
+    <span id="zoomLabel" class="text-xs text-gray-600">100%</span>
+    
+    <button id="zoomIn" class="w-6 h-6 flex items-center justify-center text-xs bg-gray-100 border border-gray-300 rounded-full hover:bg-gray-200 transition">+</button>
+`;
+
+    const zoomOutBtn = document.getElementById("zoomOut");
+    const zoomInBtn = document.getElementById("zoomIn");
+    const zoomSlider = document.getElementById("zoomSlider");
+    const zoomLabel = document.getElementById("zoomLabel");
+
+    let zoomLevel = 100;
+
     let cachedData = [];
     toggleStyleInputs('headerStyleCell', false);
     toggleStyleInputs('footerStyleCell', false);
@@ -623,31 +650,40 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // 🔽 HTML akhir
         let html = `
-            ${styleTag}
-            <div class="generatorPDF">
-                ${renderTable("headerStyle", "table_header_style")}
-                <table class="generatorPDF-table" id="table_resizeable">
-                    <thead id="table_header_tableStyle">
-                        <tr>
-                            ${headers.map(header => {
+${styleTag}
+<div class="generatorPDF" style="display:flex; flex-direction:column; min-height:100%; box-sizing:border-box;">
+    <div class="generatorPDF-content" style="flex:1 1 auto; box-sizing:border-box; padding-bottom:8px;">
+        ${renderTable("headerStyle", "table_header_style")}
+        
+        <table class="generatorPDF-table" id="table_resizeable" 
+               style="width:100%; border-collapse:collapse; table-layout:fixed;">
+            <thead id="table_header_tableStyle">
+                <tr>
+                    ${headers.map(header => {
             const customHeader = manager.selectors[`header_${header}`]?.content || header;
             return `<th id="header_${header}" contentEditable="true" class="generatorPDF-th">${customHeader}</th>`;
         }).join('')}
-                        </tr>
-                    </thead>
-                    <tbody id="table_data_body">
-                        ${data.map(row => `
-                            <tr>
-                                ${headers.map(header => `
-                                    <td class="generatorPDF-td">${row[header]}</td>
-                                `).join('')}
-                            </tr>
+                </tr>
+            </thead>
+            <tbody id="table_data_body">
+                ${data.map(row => `
+                    <tr>
+                        ${headers.map(header => `
+                            <td class="generatorPDF-td">${row[header]}</td>
                         `).join('')}
-                    </tbody>
-                </table>
-                ${renderTable("footerStyle", "table_footer_style")}
-            </div>
-        `;
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- FOOTER selalu di bawah -->
+    <div class="generatorPDF-footer" style="margin-top:auto;">
+        ${renderTable("footerStyle", "table_footer_style")}
+    </div>
+</div>
+`;
+
 
 
         previewEl.innerHTML = html;
@@ -1520,7 +1556,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         </div>
                     </div>
                 `;
-    
+
                 // animasi fadeIn
                 const style = document.createElement("style");
                 style.innerHTML = `
@@ -1530,17 +1566,17 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 `;
                 document.head.appendChild(style);
-    
+
                 document.body.appendChild(modal);
             }
-    
+
             const modal = document.getElementById("customAlert");
             const msgEl = document.getElementById("alertMessage");
             const btnContainer = document.getElementById("alertButtons");
-    
+
             msgEl.textContent = message;
             btnContainer.innerHTML = ""; // reset tombol
-    
+
             // tombol Cancel (jika diizinkan)
             if (options.showCancel) {
                 const btnCancel = document.createElement("button");
@@ -1555,7 +1591,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 };
                 btnContainer.appendChild(btnCancel);
             }
-    
+
             // tombol OK
             const btnOk = document.createElement("button");
             btnOk.textContent = options.okText || "OK";
@@ -1569,15 +1605,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 resolve(true);
             };
             btnContainer.appendChild(btnOk);
-    
+
             modal.style.display = "flex";
         });
     }
-    
-    
+
+
 
     // === Utility: Custom Prompt Modern ===
-    async function showCustomPrompt(title = "Masukkan nama file", templates = []) {
+    async function showCustomPrompt(title = "Masukkan nama file", templates = [], defaultValue = "") {
         return new Promise((resolve, reject) => {
             // inject modal kalau belum ada
             if (!document.getElementById("customPrompt")) {
@@ -1634,7 +1670,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                 `;
                 document.body.appendChild(modal);
-    
+
                 // style animasi
                 const style = document.createElement("style");
                 style.innerHTML = `
@@ -1652,18 +1688,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 `;
                 document.head.appendChild(style);
             }
-    
+
             const modal = document.getElementById("customPrompt");
             const input = document.getElementById("promptInput");
             const list = document.getElementById("promptSuggestions");
             const btnOk = document.getElementById("promptOk");
             const btnCancel = document.getElementById("promptCancel");
-    
+
             modal.style.display = "flex";
-            input.value = "";
+            input.value = defaultValue; // ✅ isi default value
             list.innerHTML = "";
             input.focus();
-    
+            input.select(); // biar teks langsung terseleksi
+
             function renderSuggestions(value) {
                 list.innerHTML = "";
                 if (!value) return;
@@ -1678,9 +1715,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     list.appendChild(li);
                 });
             }
-    
+
             input.oninput = () => renderSuggestions(input.value);
-    
+
             btnOk.onclick = () => {
                 modal.style.display = "none";
                 resolve(input.value.trim());
@@ -1691,7 +1728,8 @@ document.addEventListener("DOMContentLoaded", () => {
             };
         });
     }
-    
+
+
 
     // === SAVE TEMPLATE pakai customPrompt ===
     async function saveTemplate() {
@@ -1702,7 +1740,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const templates = await listResponse.json();
 
             // pakai customPrompt
-            let filename = await showCustomPrompt("Simpan Template", "Nama file...", templates);
+            let filename = await showCustomPrompt("Simpan Template", "Nama file...", templateSelector.value);
             if (filename && filename.endsWith(".json")) {
                 filename = filename.replace(".json", "");
             }
@@ -1727,7 +1765,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!response.ok) throw new Error('Gagal menyimpan template');
 
             const result = await response.text();
-            alert(`Template berhasil disimpan sebagai: ${filename || "default"}`);
+            showCustomAlert(`Template berhasil disimpan sebagai: ${filename || "default"}`, { showCancel: false });
             // console.log(result);
 
             // refresh dropdown + pilih otomatis
@@ -1750,15 +1788,15 @@ document.addEventListener("DOMContentLoaded", () => {
             const listResponse = await fetch('/public/download2.php?action=get_template_list');
             if (!listResponse.ok) throw new Error('Gagal mengambil daftar template');
             const templates = await listResponse.json();
-    
-            let filename = await showCustomPrompt("Simpan Template Baru", templates);
+
+            let filename = await showCustomPrompt("Simpan Template Baru", templates, templateSelector.value);
             if (!filename) return;
-    
+
             // pastikan tanpa ekstensi .json
             if (filename.endsWith(".json")) {
                 filename = filename.replace(".json", "");
             }
-    
+
             // jika nama sudah ada, minta konfirmasi overwrite
             if (templates.includes(filename + ".json")) {
                 const overwrite = await showCustomAlert(
@@ -1767,30 +1805,30 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
                 if (!overwrite) return; // batal overwrite
             }
-    
+
             const params = buildPDFParams({ action: 'save_template_PDF' });
             params.append("filename", filename);
-    
+
             const url = `/public/download2.php?${params.toString()}`;
             const response = await fetch(url);
             if (!response.ok) throw new Error('Gagal menyimpan template');
-    
-            await showCustomAlert(`Template berhasil disimpan sebagai: ${filename}`, { showCancel: false });
-    
-            await fetchTemplateList();
-    
+
+            await showCustomAlert(`Template berhasil disimpan sebagai: ${filename}`,);
+
+            await fetchTemplateList(); { showCancel: false }
+
             // set selector ke nama baru
             const selector = document.getElementById("report_generator_templateSelector");
             selector.value = filename + ".json";
             loadTemplate(selector.value);
-    
+
         } catch (e) {
             console.error("Save As Template Error:", e);
             await showCustomAlert("Terjadi kesalahan saat menyimpan template.", { showCancel: false });
         }
     }
-    
-    
+
+
 
 
 
@@ -1869,12 +1907,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function editTemplate() {
         const selectedValue = templateSelector.value;
-    
+
         if (!selectedValue) {
             showCustomAlert("Silakan pilih template yang ingin diedit.", { showCancel: false });
             return;
         }
-    
+
         // Ambil daftar template dulu (supaya jadi array untuk showCustomPrompt)
         let templates = [];
         try {
@@ -1885,16 +1923,17 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (e) {
             console.warn("Gagal load template list untuk prompt:", e);
         }
-    
+
         // Panggil prompt dengan array templates
         showCustomPrompt(
             `Masukkan nama baru untuk template "${selectedValue}":`,
-            templates, // ✅ ini array, bukan string
+            templates,
+            templateSelector.value
         ).then(async (newName) => {
             if (!newName || newName.trim() === "" || newName === selectedValue) {
                 return; // batal rename
             }
-    
+
             try {
                 const response = await fetch(`/public/download2.php?action=edit_template`, {
                     method: "POST",
@@ -1904,9 +1943,9 @@ document.addEventListener("DOMContentLoaded", () => {
                         newName: newName.trim()
                     })
                 });
-    
+
                 const result = await response.json();
-    
+
                 if (result.success) {
                     showCustomAlert(`Template berhasil diubah menjadi "${newName}".`);
                     fetchTemplateList(); // refresh daftar template
@@ -1921,39 +1960,44 @@ document.addEventListener("DOMContentLoaded", () => {
             console.log("Rename dibatalkan");
         });
     }
-    
-    
+
+
 
     async function deleteTemplate() {
         const selectedValue = templateSelector.value;
-    
+
         if (!selectedValue) {
             showCustomAlert("Silakan pilih template yang ingin dihapus.", { showCancel: false });
             return;
-        }        
-    
+        }
+
         const confirmDelete = await showCustomAlert(
-            `Apakah Anda yakin ingin menghapus template "${selectedValue}"?`, { okText: "OK", cancelText: "Cancel", showCancel: true }
+            `Apakah Anda yakin ingin menghapus template "${selectedValue}"?`,
+            { okText: "OK", cancelText: "Cancel", showCancel: true }
         );
-    
+
         if (!confirmDelete) return;
-    
+
         try {
             const response = await fetch(`/public/download2.php?action=delete_template&filename=${encodeURIComponent(selectedValue)}`);
             const result = await response.json();
-    
+
             if (result.success) {
-                alert(`Template "${selectedValue}" berhasil dihapus.`);
-                fetchTemplateList(); // refresh daftar template
+                await showCustomAlert(`Template "${selectedValue}" berhasil dihapus.`, { showCancel: false });
+                // refresh daftar template
+                await fetchTemplateList();
+                // reload halaman
+                location.reload();
             } else {
-                alert(result.error || "Gagal menghapus template.");
+                await showCustomAlert(result.error || "Gagal menghapus template.", { showCancel: false });
             }
         } catch (error) {
             console.error("Delete Template Error:", error);
-            alert("Terjadi kesalahan saat menghapus template.");
+            await showCustomAlert("Terjadi kesalahan saat menghapus template.", { showCancel: false });
         }
     }
-    
+
+
 
     async function generatePreview() {
         const params = buildPDFParams();
@@ -1967,9 +2011,11 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        cachedData = result.data;
+        // ambil hanya 5 data pertama
+        cachedData = result.data.slice(0, 5);
         renderPreview(cachedData);
     }
+
 
     function makeTableResizable(table) {
         const cols = table.querySelectorAll("th, td");
@@ -2187,11 +2233,18 @@ document.addEventListener("DOMContentLoaded", () => {
             [width, height] = [height, width];
         }
 
-        previewElement.style.overflow = `auto`;
+        previewElement.style.overflow = `hidden`;
         previewElement.style.width = `${width}mm`;
         previewElement.style.height = `${height}mm`;
         previewElement.style.border = '1px solid #ccc';
         previewElement.style.backgroundColor = styleGroups.bodyStyle['background-color'];
+    }
+
+    function applyZoom() {
+        preview.style.transformOrigin = "top center";
+        preview.style.transform = `scale(${zoomLevel / 100})`;
+        zoomLabel.textContent = `${zoomLevel.toFixed(1)}%`;
+        zoomSlider.value = zoomLevel;
     }
 
 
@@ -2286,6 +2339,45 @@ document.addEventListener("DOMContentLoaded", () => {
         // Auto load template
         loadTemplate(selectedValue);
     });
+
+    zoomInBtn.addEventListener("click", () => {
+        zoomLevel = Math.min(zoomLevel + 5, parseFloat(zoomSlider.max));
+        applyZoom();
+    });
+
+    zoomOutBtn.addEventListener("click", () => {
+        zoomLevel = Math.max(zoomLevel - 5, parseFloat(zoomSlider.min));
+        applyZoom();
+    });
+
+    zoomSlider.addEventListener("input", () => {
+        zoomLevel = parseFloat(zoomSlider.value);
+        applyZoom();
+    });
+
+    preview.addEventListener("auxclick", (event) => {
+        event.preventDefault(); // cegah scroll bawaan browser
+    
+        let currentZoom = parseFloat(zoomSlider.value);
+    
+        if (event.deltaY < 0) {
+            // Scroll up → zoom in
+            currentZoom = Math.min(currentZoom + 2, parseFloat(zoomSlider.max));
+        } else {
+            // Scroll down → zoom out
+            currentZoom = Math.max(currentZoom - 2, parseFloat(zoomSlider.min));
+        }
+    
+        // Update slider & label
+        zoomSlider.value = currentZoom;
+        zoomLabel.textContent = `${currentZoom}%`;
+    
+        // Terapkan zoom
+        preview.style.transform = `scale(${currentZoom / 100})`;
+        preview.style.transformOrigin = "top center"; // biar zoom dari tengah atas
+    });
+
+    applyZoom();
 
 
     editTemplateButton.addEventListener('click', editTemplate);
