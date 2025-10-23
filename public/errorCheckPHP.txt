@@ -1,7 +1,2 @@
-
-oldName=>template_20250915_164926.json
-newName=>sad
-
-
-action=>edit_template
-
+bottom-center
+top-left
