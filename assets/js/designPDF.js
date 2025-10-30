@@ -1,7 +1,13 @@
 import { SelectorManager } from "./modules/selectorManager.js";
+import { ZoomManager } from "./modules/zoomManager.js";
+import { DialogManager } from "./modules/dialogManager.js";
+import { DownloadManager } from "./modules/downloadManager.js";
 
 document.addEventListener("DOMContentLoaded", () => {
     const manager = new SelectorManager();
+    const zoomManager = new ZoomManager('previewFooter', 'preview');
+    const dialogManager = new DialogManager();
+    const downloadManager = new DownloadManager(buildPDFParams);
     const downloadButton = document.getElementById("report_generator_download");
     const saveTemplateButton = document.getElementById("report_generator_saveTemplatePDF");
     const saveAsTemplateButton = document.getElementById("report_generator_saveAsTemplatePDF");
@@ -13,30 +19,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const footerRuleDisplaySelect = document.getElementById("footerDisplayRule");
     const pageNumberPositionSelect = document.getElementById("pageNumberPosition");
     const preview = document.getElementById("preview");
-    const footer = document.getElementById("previewFooter");
-
-    // Inject HTML controls ke dalam footer
-    footer.innerHTML = `
-        <button id="zoomOut" class="w-6 h-6 flex items-center justify-center text-xs bg-gray-100 border border-gray-300 rounded-full hover:bg-gray-200 transition">-</button>
-        
-        <input 
-            type="range" 
-            id="zoomSlider" 
-            min="10" max="300" value="100" step="0.5" 
-            class="w-32 h-2 appearance-none bg-gray-200 rounded-lg overflow-hidden cursor-pointer accent-indigo-500">
-        
-        <span id="zoomLabel" class="text-xs text-gray-600">100%</span>
-        
-        <button id="zoomIn" class="w-6 h-6 flex items-center justify-center text-xs bg-gray-100 border border-gray-300 rounded-full hover:bg-gray-200 transition">+</button>
-    `;
-
-    const zoomOutBtn = document.getElementById("zoomOut");
-    const zoomInBtn = document.getElementById("zoomIn");
-    const zoomSlider = document.getElementById("zoomSlider");
-    const zoomLabel = document.getElementById("zoomLabel");
-
-    let zoomLevel = 100;
-
     let cachedData = [];
     toggleStyleInputs('headerStyleCell', false);
     toggleStyleInputs('footerStyleCell', false);
@@ -54,7 +36,6 @@ document.addEventListener("DOMContentLoaded", () => {
         },
 
         getStyleString(styleObj) {
-            // console.log("styleObj", styleObj);
             return Object.entries(styleObj)
                 .map(([key, value]) => `${key}: ${value}`)
                 .join('; ');
@@ -82,14 +63,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     queryExecuteButton.addEventListener('click', () => {
         const query = document.getElementById('manualQueryInput').value;
-
         if (query.trim() === '') {
-            alert('Query tidak boleh kosong.');
+            alert('Query cannot be empty.');
             return;
         }
-
-        // console.log('Data yang dikirim ke backend:', { query: query });
-
         fetch('public/download.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -111,7 +88,7 @@ document.addEventListener("DOMContentLoaded", () => {
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Terjadi kesalahan saat mengirim query: ' + error.message);
+                alert('An error occurred while sending the query: ' + error.message);
             });
     });
 
@@ -366,8 +343,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     };
 
-
-
     (async () => {
         try {
             const data = await fetch("public/download.php?action=get_data").then(res => res.json());
@@ -377,9 +352,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             styleGroups.columnWidths = Array.from({ length: columnCount }, () => percentage);
 
-            // console.log("Column widths set (percent-based):", styleGroups.columnWidths);
+            console.log("Column widths set (percent-based):", styleGroups.columnWidths);
         } catch (error) {
-            console.error("Gagal mengambil data untuk columnWidths:", error);
+            console.error("Failed to retrieve data for columnWidths:", error);
         }
     })();
 
@@ -1478,13 +1453,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (newId && !manager.selectors[newId]) {
             manager.register(newId);
-            alert(`Selector dengan ID "${newId}" berhasil ditambahkan!`);
+            alert(`Selector with ID "${newId}" has been successfully added!`);
             updateSelectorTable();
             updateHTMLPreview();
         } else if (manager.selectors[newId]) {
-            alert(`Gagal menambahkan. ID "${newId}" sudah terdaftar.`);
+            alert(`Failed to add. ID "${newId}" is already registered.`);
         } else {
-            alert("ID selector tidak boleh kosong.");
+            alert("The ID selector cannot be empty.");
         }
 
         document.getElementById("newSelectorId").value = "";
@@ -1685,254 +1660,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return params;
     }
 
-    function downloadPDF() {
-        const params = buildPDFParams({ type: 'pdf' });
-        const url = `/public/download.php?${params.toString()}`;
-        // console.log("Download URL:", url);
-
-        fetch(url)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Server error: ${response.status}`);
-                }
-                return response.blob();
-            })
-            .then(blob => {
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = 'laporan_' + new Date().toISOString().split('T')[0] + '.pdf';
-                link.click();
-            })
-            .catch(error => {
-                console.error('Download error:', error);
-            });
-    }
-
-    // designPDF.js - Tambahkan fungsi-fungsi ini
-
-    function downloadCSV() {
-        const params = buildPDFParams({ type: 'csv' });
-        const url = `/public/download.php?${params.toString()}`;
-
-        fetch(url)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Server error: ${response.status}`);
-                }
-                return response.blob();
-            })
-            .then(blob => {
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = 'laporan_' + new Date().toISOString().split('T')[0] + '.csv';
-                link.click();
-            })
-            .catch(error => {
-                console.error('Download CSV error:', error);
-                showCustomAlert('Error downloading CSV: ' + error.message, { showCancel: false });
-            });
-    }
-
-    function downloadExcel() {
-        const params = buildPDFParams({ type: 'xlsx' });
-        const url = `/public/download.php?${params.toString()}`;
-
-        fetch(url)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Server error: ${response.status}`);
-                }
-                return response.blob();
-            })
-            .then(blob => {
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = 'laporan_' + new Date().toISOString().split('T')[0] + '.xlsx';
-                link.click();
-            })
-            .catch(error => {
-                console.error('Download Excel error:', error);
-                showCustomAlert('Error downloading Excel: ' + error.message, { showCancel: false });
-            });
-    }
-
-    // Fungsi untuk menampilkan modal pilihan download
-    async function showDownloadOptions() {
-        return new Promise((resolve) => {
-            // Buat modal untuk pilihan download
-            const modal = document.createElement("div");
-            modal.id = "downloadOptionsModal";
-            modal.style.cssText = `
-            display:flex; position:fixed; inset:0;
-            background:rgba(0,0,0,0.5); z-index:10000;
-            align-items:center; justify-content:center;
-            font-family: 'Inter', sans-serif;
-        `;
-
-            modal.innerHTML = `
-            <div style="
-                background:#fff; padding:24px; border-radius:12px;
-                width:300px; max-width:90%;
-                box-shadow:0 8px 20px rgba(0,0,0,0.15);
-                animation:fadeIn 0.2s ease-out;
-            ">
-                <h3 style="margin-bottom:20px; font-size:18px; font-weight:600; color:#111; text-align:center;">
-                    Download Options
-                </h3>
-                <div style="display:flex; flex-direction:column; gap:12px;">
-                    <button id="downloadPDF" style="
-                        background:#dc2626; color:white; border:none;
-                        padding:12px 16px; border-radius:8px; font-size:14px;
-                        cursor:pointer; transition:background 0.2s; font-weight:500;
-                    ">Download PDF</button>
-                    
-                    <button id="downloadCSV" style="
-                        background:#059669; color:white; border:none;
-                        padding:12px 16px; border-radius:8px; font-size:14px;
-                        cursor:pointer; transition:background 0.2s; font-weight:500;
-                    ">Download CSV</button>
-                    
-                    <button id="downloadExcel" style="
-                        background:#2563eb; color:white; border:none;
-                        padding:12px 16px; border-radius:8px; font-size:14px;
-                        cursor:pointer; transition:background 0.2s; font-weight:500;
-                    ">Download Excel</button>
-                    
-                    <button id="downloadCancel" style="
-                        background:#f3f4f6; color:#374151; border:none;
-                        padding:12px 16px; border-radius:8px; font-size:14px;
-                        cursor:pointer; transition:background 0.2s; font-weight:500; margin-top:8px;
-                    ">Cancel</button>
-                </div>
-            </div>
-        `;
-
-            document.body.appendChild(modal);
-
-            // Event handlers untuk tombol
-            document.getElementById('downloadPDF').onclick = () => {
-                modal.remove();
-                resolve('pdf');
-            };
-
-            document.getElementById('downloadCSV').onclick = () => {
-                modal.remove();
-                resolve('csv');
-            };
-
-            document.getElementById('downloadExcel').onclick = () => {
-                modal.remove();
-                resolve('excel');
-            };
-
-            document.getElementById('downloadCancel').onclick = () => {
-                modal.remove();
-                resolve(null);
-            };
-
-            // Style animasi
-            if (!document.getElementById('downloadModalStyle')) {
-                const style = document.createElement("style");
-                style.id = "downloadModalStyle";
-                style.innerHTML = `
-                @keyframes fadeIn {
-                    from { opacity:0; transform:scale(0.95); }
-                    to { opacity:1; transform:scale(1); }
-                }
-                #downloadPDF:hover { background: #b91c1c !important; }
-                #downloadCSV:hover { background: #047857 !important; }
-                #downloadExcel:hover { background: #1d4ed8 !important; }
-                #downloadCancel:hover { background: #e5e7eb !important; }
-            `;
-                document.head.appendChild(style);
-            }
-        });
-    }
-
-    function showCustomAlert(
-        message,
-        options = { okText: "OK", cancelText: "Cancel", showCancel: true }
-    ) {
-        return new Promise((resolve) => {
-            // inject modal kalau belum ada
-            if (!document.getElementById("customAlert")) {
-                const modal = document.createElement("div");
-                modal.id = "customAlert";
-                modal.style.cssText = `
-                    display:none; position:fixed; inset:0;
-                    background:rgba(0,0,0,0.5); z-index:10000;
-                    display:flex; align-items:center; justify-content:center;
-                    font-family: 'Inter', sans-serif;
-                `;
-                modal.innerHTML = `
-                    <div style="
-                        background:#fff; padding:24px; border-radius:12px;
-                        width:320px; max-width:90%;
-                        box-shadow:0 8px 20px rgba(0,0,0,0.15);
-                        animation:fadeIn 0.2s ease-out;
-                    ">
-                        <p id="alertMessage"
-                            style="margin-bottom:20px; font-size:15px; color:#111; line-height:1.5;">
-                        </p>
-                        <div id="alertButtons"
-                            style="text-align:right; display:flex; justify-content:flex-end; gap:8px;">
-                        </div>
-                    </div>
-                `;
-
-                // animasi fadeIn
-                const style = document.createElement("style");
-                style.innerHTML = `
-                    @keyframes fadeIn {
-                        from { opacity:0; transform:scale(0.95); }
-                        to { opacity:1; transform:scale(1); }
-                    }
-                `;
-                document.head.appendChild(style);
-
-                document.body.appendChild(modal);
-            }
-
-            const modal = document.getElementById("customAlert");
-            const msgEl = document.getElementById("alertMessage");
-            const btnContainer = document.getElementById("alertButtons");
-
-            msgEl.textContent = message;
-            btnContainer.innerHTML = ""; // reset tombol
-
-            // tombol Cancel (jika diizinkan)
-            if (options.showCancel) {
-                const btnCancel = document.createElement("button");
-                btnCancel.textContent = options.cancelText || "Cancel";
-                btnCancel.style.cssText = `
-                    background:#f3f4f6; border:none; padding:6px 14px;
-                    border-radius:6px; font-size:14px; cursor:pointer;
-                `;
-                btnCancel.onclick = () => {
-                    modal.style.display = "none";
-                    resolve(false);
-                };
-                btnContainer.appendChild(btnCancel);
-            }
-
-            // tombol OK
-            const btnOk = document.createElement("button");
-            btnOk.textContent = options.okText || "OK";
-            btnOk.style.cssText = `
-                background:#2563eb; color:white; border:none;
-                padding:6px 14px; border-radius:6px; font-size:14px;
-                cursor:pointer;
-            `;
-            btnOk.onclick = () => {
-                modal.style.display = "none";
-                resolve(true);
-            };
-            btnContainer.appendChild(btnOk);
-
-            modal.style.display = "flex";
-        });
-    }
-
     function enableHeaderFooterRulesControls(styleGroups) {
         if (headerRuleDisplaySelect) {
             headerRuleDisplaySelect.addEventListener("change", (e) => {
@@ -1978,136 +1705,16 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-
-    // === Utility: Custom Prompt Modern ===
-    async function showCustomPrompt(title = "Input File Name", templates = [], defaultValue = "") {
-        return new Promise((resolve, reject) => {
-            // inject modal kalau belum ada
-            if (!document.getElementById("customPrompt")) {
-                const modal = document.createElement("div");
-                modal.id = "customPrompt";
-                modal.style.cssText = `
-                    display:none; position:fixed; inset:0;
-                    background:rgba(0,0,0,0.5); z-index:9999;
-                    display:flex; align-items:center; justify-content:center;
-                    font-family: 'Inter', sans-serif;
-                `;
-                modal.innerHTML = `
-                    <div style="
-                        background:#fff; padding:24px; border-radius:12px;
-                        width:350px; max-width:90%;
-                        box-shadow:0 8px 20px rgba(0,0,0,0.15);
-                        animation:fadeIn 0.2s ease-out;
-                    ">
-                        <h3 style="margin-bottom:12px; font-size:16px; font-weight:600; color:#111;">
-                            ${title}
-                        </h3>
-                        <input type="text" id="promptInput" placeholder="File name..."
-                            style="
-                                width:100%; padding:10px 12px; border:1px solid #ddd;
-                                border-radius:8px; outline:none;
-                                font-size:14px; margin-bottom:8px;
-                                transition:border 0.2s;
-                            "
-                        >
-                        <ul id="promptSuggestions"
-                            style="
-                                max-height:150px; overflow-y:auto;
-                                border:1px solid #eee; border-radius:8px;
-                                margin:6px 0; padding:0;
-                                list-style:none; font-size:14px;
-                            ">
-                        </ul>
-                        <div style="margin-top:16px; text-align:right; display:flex; justify-content:flex-end; gap:8px;">
-                            <button id="promptCancel"
-                                style="
-                                    background:#f3f4f6; border:none; padding:6px 14px;
-                                    border-radius:6px; font-size:14px; cursor:pointer;
-                                    transition:background 0.2s;
-                                "
-                            >Cancel</button>
-                            <button id="promptOk"
-                                style="
-                                    background:#2563eb; color:white; border:none;
-                                    padding:6px 14px; border-radius:6px; font-size:14px;
-                                    cursor:pointer; transition:background 0.2s;
-                                "
-                            >Save</button>
-                        </div>
-                    </div>
-                `;
-                document.body.appendChild(modal);
-
-                // style animasi
-                const style = document.createElement("style");
-                style.innerHTML = `
-                    @keyframes fadeIn {
-                        from { opacity:0; transform:scale(0.95); }
-                        to { opacity:1; transform:scale(1); }
-                    }
-                    #promptSuggestions li {
-                        padding:8px 12px; cursor:pointer;
-                        transition: background 0.2s;
-                    }
-                    #promptSuggestions li:hover {
-                        background:#f9fafb;
-                    }
-                `;
-                document.head.appendChild(style);
-            }
-
-            const modal = document.getElementById("customPrompt");
-            const input = document.getElementById("promptInput");
-            const list = document.getElementById("promptSuggestions");
-            const btnOk = document.getElementById("promptOk");
-            const btnCancel = document.getElementById("promptCancel");
-
-            modal.style.display = "flex";
-            input.value = defaultValue; // ✅ isi default value
-            list.innerHTML = "";
-            input.focus();
-            input.select(); // biar teks langsung terseleksi
-
-            function renderSuggestions(value) {
-                list.innerHTML = "";
-                if (!value) return;
-                const filtered = templates.filter(t => t.toLowerCase().includes(value.toLowerCase()));
-                filtered.forEach(t => {
-                    const li = document.createElement("li");
-                    li.textContent = t.replace(".json", "");
-                    li.onclick = () => {
-                        input.value = li.textContent;
-                        list.innerHTML = "";
-                    };
-                    list.appendChild(li);
-                });
-            }
-
-            input.oninput = () => renderSuggestions(input.value);
-
-            btnOk.onclick = () => {
-                modal.style.display = "none";
-                resolve(input.value.trim());
-            };
-            btnCancel.onclick = () => {
-                modal.style.display = "none";
-                reject("dibatalkan");
-            };
-        });
-    }
-
-
-
     // === SAVE TEMPLATE pakai customPrompt ===
     async function saveTemplate() {
         try {
             // ambil daftar template dulu
             const listResponse = await fetch('/public/download.php?action=get_template_list');
-            if (!listResponse.ok) throw new Error('Gagal mengambil daftar template');
+            if (!listResponse.ok) throw new Error('Failed to retrieve template list');
             const templates = await listResponse.json();
 
             // pakai customPrompt
-            let filename = await showCustomPrompt("Save New Template", "File name...", templateSelector.value);
+            let filename = await dialogManager.showCustomPrompt("Save New Template", "File name...", templateSelector.value);
             if (filename && filename.endsWith(".json")) {
                 filename = filename.replace(".json", "");
             }
@@ -2129,11 +1736,10 @@ document.addEventListener("DOMContentLoaded", () => {
             const url = `/public/download.php?${params.toString()}`;
 
             const response = await fetch(url);
-            if (!response.ok) throw new Error('Gagal menyimpan template');
+            if (!response.ok) throw new Error('Failed to save template');
 
             const result = await response.text();
-            showCustomAlert(`Template successfully saved as: ${filename || "default"}`, { showCancel: false });
-            // console.log(result);
+            dialogManager.showCustomAlert(`Template successfully saved as: ${filename || "default"}`, { showCancel: false });
 
             // refresh dropdown + pilih otomatis
             await fetchTemplateList();
@@ -2153,10 +1759,10 @@ document.addEventListener("DOMContentLoaded", () => {
     async function saveAsTemplate() {
         try {
             const listResponse = await fetch('/public/download.php?action=get_template_list');
-            if (!listResponse.ok) throw new Error('Gagal mengambil daftar template');
+            if (!listResponse.ok) throw new Error('Failed to retrieve template list');
             const templates = await listResponse.json();
 
-            let filename = await showCustomPrompt("Save New Template", templates, templateSelector.value);
+            let filename = await dialogManager.showCustomPrompt("Save New Template", templates, templateSelector.value);
             if (!filename) return;
 
             // pastikan tanpa ekstensi .json
@@ -2166,7 +1772,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // jika nama sudah ada, minta konfirmasi overwrite
             if (templates.includes(filename + ".json")) {
-                const overwrite = await showCustomAlert(
+                const overwrite = await dialogManager.showCustomAlert(
                     `A template with the name "${filename}" already exists.Do you want to replace it?`,
                     { okText: "Yes", cancelText: "Cancel", showCancel: true }
                 );
@@ -2178,9 +1784,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const url = `/public/download.php?${params.toString()}`;
             const response = await fetch(url);
-            if (!response.ok) throw new Error('Gagal menyimpan template');
+            if (!response.ok) throw new Error('Failed to save template');
 
-            await showCustomAlert(`Template successfully saved as: ${filename}`,);
+            await dialogManager.showCustomAlert(`Template successfully saved as: ${filename}`,);
 
             await fetchTemplateList(); { showCancel: false }
 
@@ -2191,30 +1797,57 @@ document.addEventListener("DOMContentLoaded", () => {
 
         } catch (e) {
             console.error("Save As Template Error:", e);
-            await showCustomAlert("An error occurred while saving the template.", { showCancel: false });
+            await dialogManager.showCustomAlert("An error occurred while saving the template.", { showCancel: false });
         }
     }
 
     async function loadTemplate(filename) {
         try {
             const response = await fetch(`/public/download.php?action=load_template&filename=${encodeURIComponent(filename)}`);
-            if (!response.ok) throw new Error('Gagal memuat template');
+            if (!response.ok) throw new Error('Failed to load template');
 
             const template = await response.json();
-            if (!template) throw new Error('Template kosong');
+            if (!template) throw new Error('Empty template');
 
-            // 1. Set selector values
+            // 1. Handle paperSize khusus - jika berupa array angka, set sebagai Custom
+            let paperSizeValue = template.paperSize || 'A4';
+            let customWidthValue = template.customWidth || '210';
+            let customHeightValue = template.customHeight || '297';
+
+            // Cek jika paperSize adalah array angka
+            if (Array.isArray(paperSizeValue) && paperSizeValue.length >= 2) {
+                paperSizeValue = "custom";
+                customWidthValue = paperSizeValue[0].toString();
+                customHeightValue = paperSizeValue[1].toString();
+            }
+            // Cek jika paperSize adalah string yang berisi array (fallback)
+            else if (typeof paperSizeValue === 'string' && paperSizeValue.startsWith('[') && paperSizeValue.endsWith(']')) {
+                try {
+                    const sizeArray = JSON.parse(paperSizeValue);
+                    if (Array.isArray(sizeArray) && sizeArray.length >= 2) {
+                        paperSizeValue = "custom";
+                        customWidthValue = sizeArray[0].toString();
+                        customHeightValue = sizeArray[1].toString();
+                    }
+                } catch (e) {
+                    console.warn('Failed to parse paperSize as an array:', e);
+                }
+            }
+
+            // 2. Set selector values dengan nilai yang sudah diproses
             if (PDFDesigner && PDFDesigner.updateSelectorValues) {
                 PDFDesigner.updateSelectorValues({
-                    paperSize: template.paperSize || 'A4',
+                    paperSize: paperSizeValue,
                     paperOrientation: template.paperOrientation || 'portrait',
                     metaTitle: template.metaTitle || '',
                     metaAuthor: template.metaAuthor || '',
                     metaSubject: template.metaSubject || '',
+                    customWidth: customWidthValue,
+                    customHeight: customHeightValue,
                 });
             }
 
-            // 2. Update custom headers
+            // 3. Update custom headers
             for (const key in template.customHeaders) {
                 if (manager.selectors[`header_${key}`]) {
                     manager.selectors[`header_${key}`].content = template.customHeaders[key];
@@ -2223,7 +1856,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
 
-            // 3. Update styleGroups dengan data dari template
+            // 4. Update styleGroups dengan data dari template
             styleGroups.headerTableStyle = template.headerTableStyle || {};
             styleGroups.rowTableStyle = template.rowTableStyle || {};
             styleGroups.tableStyle = template.tableStyle || {};
@@ -2235,22 +1868,34 @@ document.addEventListener("DOMContentLoaded", () => {
             styleGroups.footerDisplayRule = template.footerDisplayRule || "every-page";
             styleGroups.pageNumberPosition = template.pageNumberPosition || "none";
 
-            // 4. Update semua input form berdasarkan template
-            updateFormInputsFromTemplate(template);
+            // 5. Update semua input form berdasarkan template
+            updateFormInputsFromTemplate({
+                ...template,
+                paperSize: paperSizeValue,
+                customWidth: customWidthValue,
+                customHeight: customHeightValue
+            });
 
-            // 5. Update selector dropdowns
+            // 6. Update selector dropdowns
             updateSelectorTable();
 
-            // 6. Preview otomatis
-            generatePreview();
+            // 7. Update preview size berdasarkan template
+            setPreviewSize();
 
-            console.log('Template berhasil dimuat dan form di-update');
+            // 8. Preview otomatis dengan delay untuk memastikan size sudah terupdate
+            setTimeout(() => {
+                generatePreview();
+            }, 200);
+
+            console.log('Template successfully loaded and form updated');
+            console.log('PaperSize:', paperSizeValue, 'Custom dimensions:', customWidthValue + 'x' + customHeightValue);
         } catch (error) {
             console.error('Load Template Error:', error);
-            alert('Gagal memuat template. Silakan coba lagi.');
+            alert('Failed to load template. Please try again.');
         }
     }
 
+    // Fungsi baru untuk update semua input form berdasarkan template
     // Fungsi baru untuk update semua input form berdasarkan template
     function updateFormInputsFromTemplate(template) {
         // Update Paper Settings
@@ -2264,14 +1909,15 @@ document.addEventListener("DOMContentLoaded", () => {
             if (paperOrientationSelect) paperOrientationSelect.value = template.paperOrientation;
         }
 
-        if (template.customWidth) {
+        // Update custom dimensions - pastikan nilai ada dan valid
+        if (template.customWidth !== undefined && template.customWidth !== null) {
             const customWidthInput = document.getElementById('customWidth');
-            if (customWidthInput) customWidthInput.value = template.customWidth;
+            if (customWidthInput) customWidthInput.value = parseFloat(template.customWidth) || 210;
         }
 
-        if (template.customHeight) {
+        if (template.customHeight !== undefined && template.customHeight !== null) {
             const customHeightInput = document.getElementById('customHeight');
-            if (customHeightInput) customHeightInput.value = template.customHeight;
+            if (customHeightInput) customHeightInput.value = parseFloat(template.customHeight) || 297;
         }
 
         // Update Layout Options
@@ -2299,8 +1945,11 @@ document.addEventListener("DOMContentLoaded", () => {
         // Update Body Style inputs
         updateStyleInputsFromObject('bodyStyle', template.bodyStyle || {});
 
-        // Toggle custom paper inputs jika perlu
-        toggleCustomInputs();
+        // Toggle custom paper inputs dan update preview size
+        setTimeout(() => {
+            toggleCustomInputs();
+            setPreviewSize();
+        }, 100);
     }
 
     // Fungsi helper untuk update style inputs berdasarkan group
@@ -2328,10 +1977,9 @@ document.addEventListener("DOMContentLoaded", () => {
     async function fetchTemplateList() {
         try {
             const response = await fetch('/public/download.php?action=get_template_list');
-            if (!response.ok) throw new Error('Gagal mengambil daftar template');
+            if (!response.ok) throw new Error('Failed to retrieve template list');
 
             const templates = await response.json();
-            // console.log("TEMPLATES : " + templates);
             // Bersihkan dropdown dan tambahkan opsi default
             templateSelector.options.length = 1;
             // Masukkan semua template ke dropdown
@@ -2343,7 +1991,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         } catch (error) {
             console.error('Fetch Template List Error:', error);
-            alert('Gagal mengambil daftar template.');
+            alert('Failed to fetch the template list.');
         }
     }
 
@@ -2353,11 +2001,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const selectedValue = templateSelector.value;
 
         if (!selectedValue) {
-            showCustomAlert("Please select the template you want to edit.", { showCancel: false });
+            dialogManager.showCustomAlert("Please select the template you want to edit.", { showCancel: false });
             return;
         }
 
-        // Ambil daftar template dulu (supaya jadi array untuk showCustomPrompt)
+        // Ambil daftar template dulu (supaya jadi array untuk dialogManager.showCustomPrompt)
         let templates = [];
         try {
             const response = await fetch('/public/download.php?action=get_template_list');
@@ -2365,11 +2013,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 templates = await response.json();
             }
         } catch (e) {
-            console.warn("Gagal load template list untuk prompt:", e);
+            console.warn("Failed to load template list for prompt:", e);
         }
 
         // Panggil prompt dengan array templates
-        showCustomPrompt(
+        dialogManager.showCustomPrompt(
             `Enter a new name for the template "${selectedValue}":`,
             templates,
             templateSelector.value
@@ -2391,17 +2039,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 const result = await response.json();
 
                 if (result.success) {
-                    showCustomAlert(`Template berhasil diubah menjadi "${newName}".`);
+                    dialogManager.showCustomAlert(`Template successfully changed to "${newName}".`);
                     fetchTemplateList(); // refresh daftar template
                 } else {
-                    showCustomAlert(result.error || "Gagal mengubah nama template.");
+                    dialogManager.showCustomAlert(result.error || "Failed to change the template name.");
                 }
             } catch (error) {
                 console.error("Edit Template Error:", error);
-                showCustomAlert("Terjadi kesalahan saat mengubah nama template.");
+                dialogManager.showCustomAlert("An error occurred while renaming the template.");
             }
         }).catch(() => {
-            console.log("Rename dibatalkan");
+            console.log("Rename canceled");
         });
     }
 
@@ -2411,11 +2059,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const selectedValue = templateSelector.value;
 
         if (!selectedValue) {
-            showCustomAlert("Please select the template you want to delete.", { showCancel: false });
+            dialogManager.showCustomAlert("Please select the template you want to delete.", { showCancel: false });
             return;
         }
 
-        const confirmDelete = await showCustomAlert(
+        const confirmDelete = await dialogManager.showCustomAlert(
             `Are you sure you want to delete the template? "${selectedValue}"?`,
             { okText: "OK", cancelText: "Cancel", showCancel: true }
         );
@@ -2427,17 +2075,17 @@ document.addEventListener("DOMContentLoaded", () => {
             const result = await response.json();
 
             if (result.success) {
-                await showCustomAlert(`Template "${selectedValue}" successfully deleted.`, { showCancel: false });
+                await dialogManager.showCustomAlert(`Template "${selectedValue}" successfully deleted.`, { showCancel: false });
                 // refresh daftar template
                 await fetchTemplateList();
                 // reload halaman
                 location.reload();
             } else {
-                await showCustomAlert(result.error || "Gagal menghapus template.", { showCancel: false });
+                await dialogManager.showCustomAlert(result.error || "Failed to delete the template.", { showCancel: false });
             }
         } catch (error) {
             console.error("Delete Template Error:", error);
-            await showCustomAlert("Terjadi kesalahan saat menghapus template.", { showCancel: false });
+            await dialogManager.showCustomAlert("An error occurred while deleting the template.", { showCancel: false });
         }
     }
 
@@ -2641,16 +2289,45 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function toggleCustomInputs() {
-        const paperSize = document.getElementById('paperSize')?.value;
-        const customPaperInputs = document.getElementById('customPaperInputs');
-        const customWidth = document.getElementById('customWidth');
-        const customHeight = document.getElementById('customHeight');
-        
-        if (customPaperInputs && customWidth && customHeight) {
-            const isCustom = paperSize === "custom";
+        const paperSizeSelect = document.getElementById('paperSize');
+        const isCustom = paperSizeSelect ? paperSizeSelect.value === "custom" : false;
+        const customPaperInputs = document.getElementById("customPaperInputs");
+
+        if (customPaperInputs) {
             customPaperInputs.classList.toggle("hidden", !isCustom);
-            customWidth.disabled = !isCustom;
-            customHeight.disabled = !isCustom;
+
+            const customWidthInput = document.getElementById('customWidth');
+            const customHeightInput = document.getElementById('customHeight');
+
+            if (customWidthInput) customWidthInput.disabled = !isCustom;
+            if (customHeightInput) customHeightInput.disabled = !isCustom;
+        }
+
+        // Jika custom, update preview size ketika nilai berubah
+        if (isCustom) {
+            // Add event listeners untuk custom width/height changes
+            const updatePreviewOnCustomChange = () => {
+                if (paperSizeSelect && paperSizeSelect.value === "custom") {
+                    setPreviewSize();
+                    if (cachedData.length > 0) {
+                        renderPreview(cachedData);
+                    }
+                }
+            };
+
+            // Hapus event listeners lama jika ada
+            const customWidthInput = document.getElementById('customWidth');
+            const customHeightInput = document.getElementById('customHeight');
+
+            if (customWidthInput) {
+                customWidthInput.removeEventListener('input', updatePreviewOnCustomChange);
+                customWidthInput.addEventListener('input', updatePreviewOnCustomChange);
+            }
+
+            if (customHeightInput) {
+                customHeightInput.removeEventListener('input', updatePreviewOnCustomChange);
+                customHeightInput.addEventListener('input', updatePreviewOnCustomChange);
+            }
         }
     }
 
@@ -2658,47 +2335,74 @@ document.addEventListener("DOMContentLoaded", () => {
         const paperSize = selectorVars.paperSize.value;
         const paperOrientation = selectorVars.paperOrientation.value;
 
-        let width = 210, height = 297; // default A4
+        let width = 210, height = 297; // default A4 dalam mm
 
         switch (paperSize) {
-            case "A4": width = 210; height = 297; break;
-            case "A5": width = 148; height = 210; break;
-            case "Letter": width = 216; height = 279; break;
-            case "custom":
-                width = parseFloat(selectorVars.customWidth.value) || 210;
-                height = parseFloat(selectorVars.customHeight.value) || 297;
+            case "A4":
+                width = 210;
+                height = 297;
                 break;
+            case "A5":
+                width = 148;
+                height = 210;
+                break;
+            case "Letter":
+                width = 216;
+                height = 279;
+                break;
+            case "Legal":
+                width = 216;
+                height = 356;
+                break;
+            case "custom":
+                // Ambil nilai dari input custom
+                const customWidth = parseFloat(selectorVars.customWidth.value) || 210;
+                const customHeight = parseFloat(selectorVars.customHeight.value) || 297;
+                width = customWidth;
+                height = customHeight;
+                break;
+            default:
+                width = 210;
+                height = 297;
         }
 
+        // Handle orientation
         if (paperOrientation === "landscape") {
             [width, height] = [height, width];
         }
 
-        preview.style.position = "relative"; // penting untuk footer absolute
-        preview.style.overflow = "hidden";   // supaya tidak muncul scroll
+        // Terapkan ukuran ke preview
         preview.style.width = `${width}mm`;
         preview.style.height = `${height}mm`;
         preview.style.border = "1px solid #ccc";
-        preview.style.backgroundColor = styleGroups.bodyStyle["background-color"];
+        preview.style.backgroundColor = styleGroups.bodyStyle["background-color"] || "#ffffff";
+
+        // Pastikan positioning untuk footer absolute
+        preview.style.position = "relative";
+        preview.style.overflow = "hidden";
+        preview.style.boxSizing = "border-box";
+
+        console.log(`Preview size set to: ${width}mm x ${height}mm (${paperOrientation})`);
     }
 
-
-    function applyZoom() {
-        preview.style.transformOrigin = "top center";
-        preview.style.transform = `scale(${zoomLevel / 100})`;
-        zoomLabel.textContent = `${zoomLevel.toFixed(1)}%`;
-        zoomSlider.value = zoomLevel;
-    }
-
-
-    selectorVars.paperSize.addEventListener("change", toggleCustomInputs);
-    toggleCustomInputs();
-    selectorVars.paperSize.addEventListener("change", setPreviewSize);
-    selectorVars.paperOrientation.addEventListener("change", setPreviewSize);
-    document.querySelectorAll('[data-style-group]').forEach(input => {
-        input.addEventListener('input', handleInputChange);
-        input.addEventListener('change', handleInputChange);
+    // toggleCustomInputs();
+    // Di bagian DOMContentLoaded, tambahkan event listeners:
+    selectorVars.paperSize.addEventListener("change", function () {
+        toggleCustomInputs();
+        setPreviewSize();
+        if (cachedData.length > 0) {
+            setTimeout(() => renderPreview(cachedData), 100);
+        }
     });
+
+    selectorVars.paperOrientation.addEventListener("change", function () {
+        setPreviewSize();
+        if (cachedData.length > 0) {
+            setTimeout(() => renderPreview(cachedData), 100);
+        }
+    });
+
+    // Event listeners untuk custom inputs (akan diatur di toggleCustomInputs)
 
     function handleInputChange() {
         // Coba cari di header dulu, jika tidak ada baru ke footer
@@ -2757,25 +2461,19 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-
-
-    // Update event listener untuk tombol download
     downloadButton.addEventListener('click', async () => {
-        const selectedOption = await showDownloadOptions();
-
-        switch (selectedOption) {
-            case 'pdf':
-                downloadPDF();
-                break;
-            case 'csv':
-                downloadCSV();
-                break;
-            case 'excel':
-                downloadExcel();
-                break;
-            default:
-                // User membatalkan
-                break;
+        const selectedOption = await dialogManager.showDownloadOptions();
+        
+        if (selectedOption) {
+            try {
+                await downloadManager.download(selectedOption);
+            } catch (error) {
+                console.error('Download failed:', error);
+                await dialogManager.showCustomAlert(
+                    `Download error: ${error.message}`,
+                    { showCancel: false }
+                );
+            }
         }
     });
 
@@ -2787,53 +2485,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!selectedValue) {
             return; // kalau pilih default "Pilih Template"
         }
-
-        // console.log('Template yang dipilih:', selectedValue);
-
         // Auto load template
         loadTemplate(selectedValue);
     });
-
-    zoomInBtn.addEventListener("click", () => {
-        zoomLevel = Math.min(zoomLevel + 5, parseFloat(zoomSlider.max));
-        applyZoom();
-    });
-
-    zoomOutBtn.addEventListener("click", () => {
-        zoomLevel = Math.max(zoomLevel - 5, parseFloat(zoomSlider.min));
-        applyZoom();
-    });
-
-    zoomSlider.addEventListener("input", () => {
-        zoomLevel = parseFloat(zoomSlider.value);
-        applyZoom();
-    });
-
-    preview.addEventListener("wheel", (event) => {
-        if (event.ctrlKey) {
-            event.preventDefault(); // cegah zoom bawaan browser
-
-            let currentZoom = parseFloat(zoomSlider.value);
-
-            if (event.deltaY < 0) {
-                // Scroll up → zoom in
-                currentZoom = Math.min(currentZoom + 2, parseFloat(zoomSlider.max));
-            } else {
-                // Scroll down → zoom out
-                currentZoom = Math.max(currentZoom - 2, parseFloat(zoomSlider.min));
-            }
-
-            // Update slider & label
-            zoomSlider.value = currentZoom;
-            zoomLabel.textContent = `${currentZoom}%`;
-
-            // Terapkan zoom ke canvas/preview
-            preview.style.transform = `scale(${currentZoom / 100})`;
-            preview.style.transformOrigin = "top center";
-        }
-    }, { passive: false }); // supaya preventDefault bisa jalan
-
-    applyZoom();
     enableHeaderFooterRulesControls(styleGroups);
 
     editTemplateButton.addEventListener('click', editTemplate);

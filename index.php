@@ -182,12 +182,12 @@ require_once __DIR__ . '/public/download.php';
 
                     <div id="customPaperInputs" class="grid grid-cols-2 gap-2 mt-1">
                         <div>
-                            <label class="block text-sm text-gray-600">Lebar (mm)</label>
+                            <label class="block text-sm text-gray-600">Width (mm)</label>
                             <input type="number" id="customWidth" class="w-full p-2 border rounded" placeholder="210"
                                 disabled>
                         </div>
                         <div>
-                            <label class="block text-sm text-gray-600">Tinggi (mm)</label>
+                            <label class="block text-sm text-gray-600">Height (mm)</label>
                             <input type="number" id="customHeight" class="w-full p-2 border rounded" placeholder="297"
                                 disabled>
                         </div>
