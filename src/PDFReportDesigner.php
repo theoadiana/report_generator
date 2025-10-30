@@ -14,8 +14,8 @@ class PDFReportDesigner
     private array $customHeaders = [];
     private string $query = '';
     private string $bodyStyle = 'margin: 20px; padding: 50px; box-sizing: border-box; font-family: Arial, sans-serif; background-color: #ffffff;';
-    private string $headerDisplayRule = 'every-page'; // "every-page" atau "first-page-only"
-    private string $footerDisplayRule = 'every-page'; // "every-page" atau "last-page-only"
+    private string $headerDisplayRule = 'every-page';
+    private string $footerDisplayRule = 'every-page';
     private string $pageNumberPosition = 'none';
 
     // Metadata
@@ -156,7 +156,7 @@ class PDFReportDesigner
 
     public function setHeaderDisplayRule(string $rule): void
     {
-        $allowed = ['every-page', 'first-page-only', 'last-page-only', 'none'];
+        $allowed = ['every-page', 'none'];
         $this->headerDisplayRule = in_array($rule, $allowed) ? $rule : 'every-page';
     }
 
@@ -168,7 +168,7 @@ class PDFReportDesigner
 
     public function setFooterDisplayRule(string $rule): void
     {
-        $allowed = ['every-page', 'first-page-only', 'last-page-only', 'none'];
+        $allowed = ['every-page', 'none'];
         $this->footerDisplayRule = in_array($rule, $allowed) ? $rule : 'every-page';
     }
 

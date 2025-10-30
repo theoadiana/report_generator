@@ -42,6 +42,9 @@ class ExportHandlerPDF extends ExportHandler
         $headerHeight = 0;
         $footerHeight = 0;
 
+        $headerDisplayRule = $this->designer->getHeaderDisplayRule();
+        $footerDisplayRule = $this->designer->getFooterDisplayRule();
+
         $headerStyle = $this->designer->getHeaderStyle() ?? [];
         $footerStyle = $this->designer->getFooterStyle() ?? [];
 
@@ -70,6 +73,36 @@ class ExportHandlerPDF extends ExportHandler
         );
 
         // ==============================
+        // CSS Visibility Logic
+        // ==============================
+        $headerVisibility = 'visible';
+        $footerVisibility = 'visible';
+
+        // Header rules
+        switch ($headerDisplayRule) {
+            case 'none':
+                $headerVisibility = 'hidden';
+                break;
+            case 'every-page':
+                $footerVisibility = 'visible';
+                break;
+            default: // every-page
+                $headerVisibility = 'visible';
+        }
+
+        // Footer rules
+        switch ($footerDisplayRule) {
+            case 'none':
+                $footerVisibility = 'hidden';
+                break;
+            case 'every-page':
+                $footerVisibility = 'visible';
+                break;
+            default:
+                $footerVisibility = 'visible';
+        }
+
+        // ==============================
         // Bangun HTML untuk Dompdf
         // ==============================
         $fullHtml = "
@@ -93,6 +126,7 @@ class ExportHandlerPDF extends ExportHandler
                     right: 0;
                     height: {$headerHeight}px;
                     text-align: center;
+                    visibility: {$headerVisibility};
                 }
                 .pdf-footer {
                     position: fixed;
@@ -102,6 +136,7 @@ class ExportHandlerPDF extends ExportHandler
                     min-height: {$footerHeight}px;
                     text-align: center;
                     box-sizing: border-box;
+                    visibility: {$footerVisibility};
                 }
             </style>
         </head>
@@ -125,7 +160,6 @@ class ExportHandlerPDF extends ExportHandler
 
         // Ambil posisi dari PDFReportDesigner
         $pageNumberPosition = $this->designer->getPageNumberPosition();
-        echo2file($pageNumberPosition);
 
         // Hanya render nomor halaman jika bukan "none"
         if ($pageNumberPosition !== 'none') {

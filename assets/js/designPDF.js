@@ -1,19 +1,17 @@
-import { SelectorManager } from "./selectorManager.js";
+import { SelectorManager } from "./modules/selectorManager.js";
 
 document.addEventListener("DOMContentLoaded", () => {
     const manager = new SelectorManager();
-    const downloadButton = document.getElementById("report_generator_downloadPDF");
+    const downloadButton = document.getElementById("report_generator_download");
     const saveTemplateButton = document.getElementById("report_generator_saveTemplatePDF");
     const saveAsTemplateButton = document.getElementById("report_generator_saveAsTemplatePDF");
     const deleteTemplateButton = document.getElementById("report_generator_deleteTemplatePDF");
     const editTemplateButton = document.getElementById("report_generator_editTemplatePDF");
     const templateSelector = document.getElementById('report_generator_templateSelector');
     const queryExecuteButton = document.getElementById("report_generator_queryExecute");
-    const headerRuleSelect = document.getElementById("headerDisplayRule");
-    const footerRuleSelect = document.getElementById("footerDisplayRule");
+    const headerRuleDisplaySelect = document.getElementById("headerDisplayRule");
+    const footerRuleDisplaySelect = document.getElementById("footerDisplayRule");
     const pageNumberPositionSelect = document.getElementById("pageNumberPosition");
-
-    //zoom in zoom out variable
     const preview = document.getElementById("preview");
     const footer = document.getElementById("previewFooter");
 
@@ -166,8 +164,8 @@ document.addEventListener("DOMContentLoaded", () => {
             'background-color': '#ffffff',
         },
         columnWidths: [],
-        headerDisplayRule: "every-page", // atau "first-page-only"
-        footerDisplayRule: "every-page", // atau "last-page-only"
+        headerDisplayRule: "every-page",
+        footerDisplayRule: "every-page",
         pageNumberPosition: "none",
         headerStyle: {
             rows: [
@@ -393,16 +391,58 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const rows = table.querySelectorAll("tr");
 
-        // Hitung total lebar dari baris pertama untuk referensi persen
-        let totalWidth = 0;
-        const firstRowCells = rows[0]?.querySelectorAll("td") || [];
-        firstRowCells.forEach(td => {
-            totalWidth += td.offsetWidth || 0;
+        // Hitung jumlah kolom maksimum dengan mempertimbangkan colspan
+        let maxCols = 0;
+        const colSpans = []; // Untuk melacak colspan per kolom
+
+        rows.forEach(tr => {
+            const cells = tr.querySelectorAll("td");
+            let colIndex = 0;
+            let rowCols = 0;
+
+            cells.forEach(td => {
+                const colspan = parseInt(td.getAttribute('colspan')) || 1;
+                rowCols += colspan;
+            });
+
+            maxCols = Math.max(maxCols, rowCols);
         });
 
+        // Hitung total lebar dari semua kolom (menggunakan baris pertama sebagai referensi)
+        let totalWidth = 0;
+        const firstRowCells = rows[0]?.querySelectorAll("td") || [];
+
+        // Buat array untuk menyimpan lebar setiap kolom
+        const columnWidths = new Array(maxCols).fill(0);
+
+        // Hitung lebar aktual setiap kolom dengan mempertimbangkan semua baris
+        rows.forEach(tr => {
+            const cells = tr.querySelectorAll("td");
+            let colIndex = 0;
+
+            cells.forEach(td => {
+                const colspan = parseInt(td.getAttribute('colspan')) || 1;
+                const widthPx = td.offsetWidth || 0;
+                const widthPerCol = widthPx / colspan;
+
+                // Distribusikan lebar ke semua kolom yang dicakup oleh colspan
+                for (let i = 0; i < colspan; i++) {
+                    if (colIndex + i < maxCols) {
+                        columnWidths[colIndex + i] = Math.max(columnWidths[colIndex + i], widthPerCol);
+                    }
+                }
+                colIndex += colspan;
+            });
+        });
+
+        // Hitung total lebar dari semua kolom
+        totalWidth = columnWidths.reduce((sum, width) => sum + width, 0);
+
+        // Bangun struktur data
         rows.forEach(tr => {
             const row = [];
             const cells = tr.querySelectorAll("td");
+            let colIndex = 0;
 
             cells.forEach(td => {
                 const tag = td.dataset.tag || 'div';
@@ -411,10 +451,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 const widthPx = td.offsetWidth || 0;
                 const heightPx = td.offsetHeight || 0;
 
-                // Konversi width ke persen (relatif terhadap total baris pertama)
-                const width = totalWidth
-                    ? ((widthPx / totalWidth) * 100).toFixed(2) + '%'
-                    : 'auto';
+                // Hitung lebar dalam persen berdasarkan total lebar semua kolom
+                const width = totalWidth > 0 ? ((widthPx / totalWidth) * 100).toFixed(2) + '%' : 'auto';
                 const height = heightPx;
 
                 // Gabungkan style inline dari td dan elemen anak pertama
@@ -450,6 +488,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     height,
                     styles: styleObj
                 });
+
+                colIndex += colspan;
             });
 
             styleStructure.rows.push(row);
@@ -551,10 +591,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     function renderPreview(data) {
-        const previewEl = document.getElementById("preview");
-
         if (!data || data.length === 0) {
-            previewEl.innerHTML = '<p class="text-red-600">Tidak ada data dari database.</p>';
+            preview.innerHTML = '<p class="text-red-600">Tidak ada data dari database.</p>';
             return;
         }
 
@@ -616,18 +654,74 @@ document.addEventListener("DOMContentLoaded", () => {
                     z-index: 1;
                     pointer-events: auto;
                 }
+                /* Style untuk header/footer yang dinonaktifkan */
+                /* Efek untuk header dan footer yang dinonaktifkan */
+                .header-disabled, .footer-disabled {
+                    opacity: 0.4 !important;
+                    filter: grayscale(80%) !important;
+                    background: repeating-linear-gradient(
+                        45deg,
+                        rgba(0,0,0,0.02),
+                        rgba(0,0,0,0.02) 5px,
+                        rgba(220,38,38,0.05) 5px,
+                        rgba(220,38,38,0.05) 10px
+                    ) !important;
+                    border: 2px dashed #dc2626 !important;
+                    pointer-events: none !important;
+                    position: relative;
+                    border-radius: 4px;
+                    transition: all 0.3s ease;
+                }
+
+                .header-disabled::before, .footer-disabled::before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(220, 38, 38, 0.03);
+                    z-index: 1;
+                }
+
+                .disabled-overlay {
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: linear-gradient(135deg, #dc2626, #b91c1c);
+                    color: white;
+                    padding: 6px 16px;
+                    border-radius: 20px;
+                    font-size: 11px;
+                    font-weight: bold;
+                    z-index: 100;
+                    white-space: nowrap;
+                    pointer-events: none;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                }
                 /* Pastikan generatorPDF menjadi konteks relatif untuk positioning absolute footer */
                 .generatorPDF { position: relative; box-sizing: border-box;}
             </style>
         `;
 
-        // renderTable (tidak diubah logika Anda)
+        // renderTable dengan penambahan class disabled
         function renderTable(styleKey = "headerStyle", tableId = "table_header_style") {
             const tableStyle = styleGroups?.[styleKey];
             if (!Array.isArray(tableStyle?.rows)) return '';
 
+            const isHeader = styleKey === "headerStyle";
+            const isDisabled = isHeader
+                ? styleGroups.headerDisplayRule === "none"
+                : styleGroups.footerDisplayRule === "none";
+
+            const disabledClass = isHeader ? "header-disabled" : "footer-disabled";
+            const disabledText = isHeader ? "HEADER DISABLED" : "FOOTER DISABLED";
+
             return `
-                <table id="${tableId}" style="width: 100%; border-collapse: collapse; margin-bottom: 10px; table-layout: fixed;">
+                <table id="${tableId}" style="width: 100%; border-collapse: collapse; margin-bottom: 10px; table-layout: fixed; ${isDisabled ? 'position: relative;' : ''}">
                     ${tableStyle.rows.map((row, rowIndex) => `
                         <tr>
                             ${row.map((cell, colIndex) => {
@@ -669,7 +763,15 @@ document.addEventListener("DOMContentLoaded", () => {
             }).join('')}
                         </tr>
                     `).join('')}
+                    ${isDisabled ? `
+                        <div class="disabled-overlay">${disabledText}</div>
+                    ` : ''}
                 </table>
+                ${isDisabled ? `
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(220, 38, 38, 0.9); color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; z-index: 100; pointer-events: none;">
+                        ${disabledText}
+                    </div>
+                ` : ''}
             `;
         }
 
@@ -683,11 +785,18 @@ document.addEventListener("DOMContentLoaded", () => {
             return `<tr>${headers.map(h => `<td class="generatorPDF-td">${row[h]}</td>`).join('')}</tr>`;
         }).join('');
 
+        // Tentukan class untuk header dan footer berdasarkan display rule
+        const headerClass = styleGroups.headerDisplayRule === "none" ? "header-disabled" : "";
+        const footerClass = styleGroups.footerDisplayRule === "none" ? "footer-disabled" : "";
+
         // HTML akhir
         let html = `
             ${styleTag}
             <div class="generatorPDF">
-                ${renderTable("headerStyle", "table_header_style")}
+                <div id="header-container" class="${headerClass}" style="position: relative;">
+                    ${renderTable("headerStyle", "table_header_style")}
+                </div>
+                
                 <table class="generatorPDF-table" id="table_resizeable">
                     <thead id="table_header_tableStyle">
                         <tr>${headersHtml}</tr>
@@ -698,13 +807,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 </table>
     
                 <!-- footer -->
-                <div id="preview_footer_wrapper">
+                <div id="preview_footer_wrapper" class="${footerClass}" style="position: relative;">
                     ${renderTable("footerStyle", "table_footer_style")}
                 </div>
             </div>
         `;
 
-        previewEl.innerHTML = html;
+        preview.innerHTML = html;
 
         // Hitung margin top & bottom dalam mm → convert ke mm (langsung pakai mm biar konsisten)
         const rawMt = (styleGroups.bodyStyle && (styleGroups.bodyStyle["margin-top"] || styleGroups.bodyStyle["margin"])) || "0mm";
@@ -713,7 +822,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const mtMm = parseLengthToMm(rawMt, 0);
         const mbMm = parseLengthToMm(rawMb, 0);
 
-        const container = previewEl.querySelector(".generatorPDF");
+        const container = preview.querySelector(".generatorPDF");
         if (container) {
             // Gunakan padding agar lebih natural, bukan height manipulasi
             container.style.marginTop = "0";    // nolkan margin agar tidak dobel
@@ -726,11 +835,9 @@ document.addEventListener("DOMContentLoaded", () => {
             container.style.boxSizing = "border-box";
         }
 
-
-
         // Wait for layout to settle, kemudian posisikan footer secara presisi
         requestAnimationFrame(() => {
-            const container = previewEl.querySelector('.generatorPDF') || previewEl;
+            const container = preview.querySelector('.generatorPDF') || preview;
             if (!container) return;
 
             const headerTable = container.querySelector("#table_header_style") || container.querySelector(".generatorPDF-table");
@@ -745,18 +852,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 footerWrapper.style.bottom = `${marginBottomMm}mm`;
 
                 if (headerTable) {
-                    // const containerRect = container.getBoundingClientRect();
-                    // const headerRect = headerTable.getBoundingClientRect();
-
-                    // const leftPx = Math.round(headerRect.left - containerRect.left);
-                    // const widthPx = Math.round(headerRect.width);
-
                     // atur wrapper agar sama posisi dengan header
                     // footerWrapper.style.left = `${leftPx}px`;
                     // footerWrapper.style.width = `${widthPx}px`;
-
-                    // biarkan table di dalamnya expand penuh
-                    // footerTable.style.width = "100%";
                 } else {
                     footerWrapper.style.left = "0";
                     footerWrapper.style.right = "0";
@@ -764,8 +862,38 @@ document.addEventListener("DOMContentLoaded", () => {
                     footerTable.style.width = "100%";
                 }
             }
-        });
 
+            // Tambahkan overlay text untuk header dan footer yang disabled
+            if (styleGroups.headerDisplayRule === "none") {
+                const headerContainer = container.querySelector("#header-container");
+                if (headerContainer) {
+                    const overlay = document.createElement("div");
+                    overlay.className = "disabled-overlay";
+                    overlay.textContent = "HEADER DISABLED";
+                    overlay.style.position = "absolute";
+                    overlay.style.top = "50%";
+                    overlay.style.left = "50%";
+                    overlay.style.transform = "translate(-50%, -50%)";
+                    overlay.style.zIndex = "100";
+                    headerContainer.appendChild(overlay);
+                }
+            }
+
+            if (styleGroups.footerDisplayRule === "none") {
+                const footerContainer = container.querySelector("#preview_footer_wrapper");
+                if (footerContainer) {
+                    const overlay = document.createElement("div");
+                    overlay.className = "disabled-overlay";
+                    overlay.textContent = "FOOTER DISABLED";
+                    overlay.style.position = "absolute";
+                    overlay.style.top = "50%";
+                    overlay.style.left = "50%";
+                    overlay.style.transform = "translate(-50%, -50%)";
+                    overlay.style.zIndex = "100";
+                    footerContainer.appendChild(overlay);
+                }
+            }
+        });
 
         // === event listeners ===
         headers.forEach(headerName => {
@@ -785,15 +913,27 @@ document.addEventListener("DOMContentLoaded", () => {
             applyColumnWidths(table);
         }
 
-        const headerTable = document.querySelector("#preview #table_header_style");
-        const footerTable = document.querySelector("#preview #table_footer_style");
-        if (headerTable) makeTableResizable(headerTable);
-        if (footerTable) makeTableResizable(footerTable);
+        // Hanya buat header dan footer resizable jika tidak disabled
+        if (styleGroups.headerDisplayRule !== "none") {
+            const headerTable = document.querySelector("#preview #table_header_style");
+            if (headerTable) makeTableResizable(headerTable);
+        }
 
-        injectCellControls("table_header_style");
-        injectCellControls("table_footer_style");
-        enableDragAndDrop("table_header_style");
-        enableDragAndDrop("table_footer_style");
+        if (styleGroups.footerDisplayRule !== "none") {
+            const footerTable = document.querySelector("#preview #table_footer_style");
+            if (footerTable) makeTableResizable(footerTable);
+        }
+
+        // Hanya inject controls jika tidak disabled
+        if (styleGroups.headerDisplayRule !== "none") {
+            injectCellControls("table_header_style");
+            enableDragAndDrop("table_header_style");
+        }
+
+        if (styleGroups.footerDisplayRule !== "none") {
+            injectCellControls("table_footer_style");
+            enableDragAndDrop("table_footer_style");
+        }
     }
 
 
@@ -970,9 +1110,6 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
     }
-
-
-
 
     function injectCellControls(tableId = "table_header_style") {
         const table = document.getElementById(tableId);
@@ -1571,6 +1708,147 @@ document.addEventListener("DOMContentLoaded", () => {
             });
     }
 
+    // designPDF.js - Tambahkan fungsi-fungsi ini
+
+    function downloadCSV() {
+        const params = buildPDFParams({ type: 'csv' });
+        const url = `/public/download.php?${params.toString()}`;
+
+        fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'laporan_' + new Date().toISOString().split('T')[0] + '.csv';
+                link.click();
+            })
+            .catch(error => {
+                console.error('Download CSV error:', error);
+                showCustomAlert('Error downloading CSV: ' + error.message, { showCancel: false });
+            });
+    }
+
+    function downloadExcel() {
+        const params = buildPDFParams({ type: 'xlsx' });
+        const url = `/public/download.php?${params.toString()}`;
+
+        fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'laporan_' + new Date().toISOString().split('T')[0] + '.xlsx';
+                link.click();
+            })
+            .catch(error => {
+                console.error('Download Excel error:', error);
+                showCustomAlert('Error downloading Excel: ' + error.message, { showCancel: false });
+            });
+    }
+
+    // Fungsi untuk menampilkan modal pilihan download
+    async function showDownloadOptions() {
+        return new Promise((resolve) => {
+            // Buat modal untuk pilihan download
+            const modal = document.createElement("div");
+            modal.id = "downloadOptionsModal";
+            modal.style.cssText = `
+            display:flex; position:fixed; inset:0;
+            background:rgba(0,0,0,0.5); z-index:10000;
+            align-items:center; justify-content:center;
+            font-family: 'Inter', sans-serif;
+        `;
+
+            modal.innerHTML = `
+            <div style="
+                background:#fff; padding:24px; border-radius:12px;
+                width:300px; max-width:90%;
+                box-shadow:0 8px 20px rgba(0,0,0,0.15);
+                animation:fadeIn 0.2s ease-out;
+            ">
+                <h3 style="margin-bottom:20px; font-size:18px; font-weight:600; color:#111; text-align:center;">
+                    Download Options
+                </h3>
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                    <button id="downloadPDF" style="
+                        background:#dc2626; color:white; border:none;
+                        padding:12px 16px; border-radius:8px; font-size:14px;
+                        cursor:pointer; transition:background 0.2s; font-weight:500;
+                    ">Download PDF</button>
+                    
+                    <button id="downloadCSV" style="
+                        background:#059669; color:white; border:none;
+                        padding:12px 16px; border-radius:8px; font-size:14px;
+                        cursor:pointer; transition:background 0.2s; font-weight:500;
+                    ">Download CSV</button>
+                    
+                    <button id="downloadExcel" style="
+                        background:#2563eb; color:white; border:none;
+                        padding:12px 16px; border-radius:8px; font-size:14px;
+                        cursor:pointer; transition:background 0.2s; font-weight:500;
+                    ">Download Excel</button>
+                    
+                    <button id="downloadCancel" style="
+                        background:#f3f4f6; color:#374151; border:none;
+                        padding:12px 16px; border-radius:8px; font-size:14px;
+                        cursor:pointer; transition:background 0.2s; font-weight:500; margin-top:8px;
+                    ">Cancel</button>
+                </div>
+            </div>
+        `;
+
+            document.body.appendChild(modal);
+
+            // Event handlers untuk tombol
+            document.getElementById('downloadPDF').onclick = () => {
+                modal.remove();
+                resolve('pdf');
+            };
+
+            document.getElementById('downloadCSV').onclick = () => {
+                modal.remove();
+                resolve('csv');
+            };
+
+            document.getElementById('downloadExcel').onclick = () => {
+                modal.remove();
+                resolve('excel');
+            };
+
+            document.getElementById('downloadCancel').onclick = () => {
+                modal.remove();
+                resolve(null);
+            };
+
+            // Style animasi
+            if (!document.getElementById('downloadModalStyle')) {
+                const style = document.createElement("style");
+                style.id = "downloadModalStyle";
+                style.innerHTML = `
+                @keyframes fadeIn {
+                    from { opacity:0; transform:scale(0.95); }
+                    to { opacity:1; transform:scale(1); }
+                }
+                #downloadPDF:hover { background: #b91c1c !important; }
+                #downloadCSV:hover { background: #047857 !important; }
+                #downloadExcel:hover { background: #1d4ed8 !important; }
+                #downloadCancel:hover { background: #e5e7eb !important; }
+            `;
+                document.head.appendChild(style);
+            }
+        });
+    }
+
     function showCustomAlert(
         message,
         options = { okText: "OK", cancelText: "Cancel", showCancel: true }
@@ -1656,41 +1934,50 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function enableHeaderFooterRulesControls(styleGroups) {
-        if (headerRuleSelect) {
-            headerRuleSelect.addEventListener("change", (e) => {
+        if (headerRuleDisplaySelect) {
+            headerRuleDisplaySelect.addEventListener("change", (e) => {
                 styleGroups.headerDisplayRule = e.target.value;
-                console.log(styleGroups.headerDisplayRule);
+                console.log("Header display rule:", styleGroups.headerDisplayRule);
+                // Refresh preview untuk menampilkan perubahan
+                if (cachedData.length > 0) {
+                    renderPreview(cachedData);
+                }
             });
         }
-    
-        if (footerRuleSelect) {
-            footerRuleSelect.addEventListener("change", (e) => {
+
+        if (footerRuleDisplaySelect) {
+            footerRuleDisplaySelect.addEventListener("change", (e) => {
                 styleGroups.footerDisplayRule = e.target.value;
+                console.log("Footer display rule:", styleGroups.footerDisplayRule);
+                // Refresh preview untuk menampilkan perubahan
+                if (cachedData.length > 0) {
+                    renderPreview(cachedData);
+                }
             });
         }
 
         if (pageNumberPositionSelect) {
             pageNumberPositionSelect.addEventListener("change", (e) => {
                 styleGroups.pageNumberPosition = e.target.value;
-                console.log(styleGroups.pageNumberPosition);
+                console.log("Page number position:", styleGroups.pageNumberPosition);
             });
         }
-    
+
         // Set nilai default jika belum ada
         if (!styleGroups.headerDisplayRule) {
-            styleGroups.headerDisplayRule = "every-page"; 
-            if (headerRuleSelect) headerRuleSelect.value = "every-page";
+            styleGroups.headerDisplayRule = "every-page";
+            if (headerRuleDisplaySelect) headerRuleDisplaySelect.value = "every-page";
         }
         if (!styleGroups.footerDisplayRule) {
-            styleGroups.footerDisplayRule = "every-page"; 
-            if (footerRuleSelect) footerRuleSelect.value = "every-page";
+            styleGroups.footerDisplayRule = "every-page";
+            if (footerRuleDisplaySelect) footerRuleDisplaySelect.value = "every-page";
         }
         if (!styleGroups.pageNumberPosition) {
-            styleGroups.pageNumberPosition = "none"; 
+            styleGroups.pageNumberPosition = "none";
             if (pageNumberPositionSelect) pageNumberPositionSelect.value = "none";
         }
     }
-    
+
 
     // === Utility: Custom Prompt Modern ===
     async function showCustomPrompt(title = "Input File Name", templates = [], defaultValue = "") {
@@ -1880,8 +2167,8 @@ document.addEventListener("DOMContentLoaded", () => {
             // jika nama sudah ada, minta konfirmasi overwrite
             if (templates.includes(filename + ".json")) {
                 const overwrite = await showCustomAlert(
-                    `Template dengan nama "${filename}" sudah ada.\nApakah Anda ingin menggantinya?`,
-                    { okText: "Ya, Ganti", cancelText: "Batal", showCancel: true }
+                    `A template with the name "${filename}" already exists.Do you want to replace it?`,
+                    { okText: "Yes", cancelText: "Cancel", showCancel: true }
                 );
                 if (!overwrite) return; // batal overwrite
             }
@@ -1914,10 +2201,9 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!response.ok) throw new Error('Gagal memuat template');
 
             const template = await response.json();
-            // console.log("template", template);
             if (!template) throw new Error('Template kosong');
 
-            // Set selector values
+            // 1. Set selector values
             if (PDFDesigner && PDFDesigner.updateSelectorValues) {
                 PDFDesigner.updateSelectorValues({
                     paperSize: template.paperSize || 'A4',
@@ -1928,7 +2214,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
             }
 
-            // Update custom headers
+            // 2. Update custom headers
             for (const key in template.customHeaders) {
                 if (manager.selectors[`header_${key}`]) {
                     manager.selectors[`header_${key}`].content = template.customHeaders[key];
@@ -1937,23 +2223,106 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
 
-            // Update styleGroups
+            // 3. Update styleGroups dengan data dari template
             styleGroups.headerTableStyle = template.headerTableStyle || {};
             styleGroups.rowTableStyle = template.rowTableStyle || {};
             styleGroups.tableStyle = template.tableStyle || {};
             styleGroups.columnWidths = template.columnWidths || [];
-            styleGroups.bodyStyle = template.bodyStyle || [];
-            styleGroups.headerStyle = template.headerStyle || [];
-            styleGroups.footerStyle = template.footerStyle || [];
+            styleGroups.bodyStyle = template.bodyStyle || {};
+            styleGroups.headerStyle = template.headerStyle || { rows: [] };
+            styleGroups.footerStyle = template.footerStyle || { rows: [] };
+            styleGroups.headerDisplayRule = template.headerDisplayRule || "every-page";
+            styleGroups.footerDisplayRule = template.footerDisplayRule || "every-page";
+            styleGroups.pageNumberPosition = template.pageNumberPosition || "none";
 
-            // Preview otomatis
+            // 4. Update semua input form berdasarkan template
+            updateFormInputsFromTemplate(template);
+
+            // 5. Update selector dropdowns
+            updateSelectorTable();
+
+            // 6. Preview otomatis
             generatePreview();
-            // console.log('Template berhasil dimuat');
-            // console.log(styleGroups.headerStyle);
+
+            console.log('Template berhasil dimuat dan form di-update');
         } catch (error) {
             console.error('Load Template Error:', error);
             alert('Gagal memuat template. Silakan coba lagi.');
         }
+    }
+
+    // Fungsi baru untuk update semua input form berdasarkan template
+    function updateFormInputsFromTemplate(template) {
+        // Update Paper Settings
+        if (template.paperSize) {
+            const paperSizeSelect = document.getElementById('paperSize');
+            if (paperSizeSelect) paperSizeSelect.value = template.paperSize;
+        }
+
+        if (template.paperOrientation) {
+            const paperOrientationSelect = document.getElementById('paperOrientation');
+            if (paperOrientationSelect) paperOrientationSelect.value = template.paperOrientation;
+        }
+
+        if (template.customWidth) {
+            const customWidthInput = document.getElementById('customWidth');
+            if (customWidthInput) customWidthInput.value = template.customWidth;
+        }
+
+        if (template.customHeight) {
+            const customHeightInput = document.getElementById('customHeight');
+            if (customHeightInput) customHeightInput.value = template.customHeight;
+        }
+
+        // Update Layout Options
+        if (template.headerDisplayRule) {
+            const headerDisplaySelect = document.getElementById('headerDisplayRule');
+            if (headerDisplaySelect) headerDisplaySelect.value = template.headerDisplayRule;
+        }
+
+        if (template.footerDisplayRule) {
+            const footerDisplaySelect = document.getElementById('footerDisplayRule');
+            if (footerDisplaySelect) footerDisplaySelect.value = template.footerDisplayRule;
+        }
+
+        if (template.pageNumberPosition) {
+            const pageNumberSelect = document.getElementById('pageNumberPosition');
+            if (pageNumberSelect) pageNumberSelect.value = template.pageNumberPosition;
+        }
+
+        // Update Header Table Style inputs
+        updateStyleInputsFromObject('headerTableStyle', template.headerTableStyle || {});
+
+        // Update Row Table Style inputs  
+        updateStyleInputsFromObject('rowTableStyle', template.rowTableStyle || {});
+
+        // Update Body Style inputs
+        updateStyleInputsFromObject('bodyStyle', template.bodyStyle || {});
+
+        // Toggle custom paper inputs jika perlu
+        toggleCustomInputs();
+    }
+
+    // Fungsi helper untuk update style inputs berdasarkan group
+    function updateStyleInputsFromObject(styleGroup, styleObject) {
+        document.querySelectorAll(`[data-style-group="${styleGroup}"]`).forEach(input => {
+            const attr = input.dataset.styleAttr;
+            if (attr && styleObject[attr] !== undefined) {
+                let value = styleObject[attr];
+
+                // Handle color values (convert rgb to hex jika perlu)
+                if (attr.includes('color') && typeof value === 'string' && value.startsWith('rgb')) {
+                    value = rgbToHex(value);
+                }
+
+                // Handle number values (remove 'px' jika ada)
+                if (input.type === 'number' && typeof value === 'string' && value.endsWith('px')) {
+                    value = parseFloat(value);
+                }
+
+                input.value = value;
+            }
+        });
     }
 
     async function fetchTemplateList() {
@@ -1964,7 +2333,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const templates = await response.json();
             // console.log("TEMPLATES : " + templates);
             // Bersihkan dropdown dan tambahkan opsi default
-
+            templateSelector.options.length = 1;
             // Masukkan semua template ke dropdown
             templates.forEach(template => {
                 const option = document.createElement('option');
@@ -2082,7 +2451,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const result = await response.json();
 
         if (!result.success || result.data.length === 0) {
-            document.getElementById("preview").innerHTML = '<p class="text-red-600">Tidak ada data dari database.</p>';
+            preview.innerHTML = '<p class="text-red-600">Tidak ada data dari database.</p>';
             return;
         }
 
@@ -2163,7 +2532,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 });
 
-                // Mapping ke styleGroups berdasarkan table.id
+                // Update styleGroups dengan pendekatan yang lebih robust
                 const groupMap = {
                     table_header_style: "headerStyle",
                     table_footer_style: "footerStyle",
@@ -2171,21 +2540,22 @@ document.addEventListener("DOMContentLoaded", () => {
                 const groupKey = groupMap[table.id];
 
                 if (groupKey && styleGroups[groupKey]?.rows) {
-                    const cellIndex = Array.from(cols).indexOf(col);
-                    let rowIndex = 0, colIdx = 0, counter = 0;
-                    outer: for (let i = 0; i < styleGroups[groupKey].rows.length; i++) {
-                        for (let j = 0; j < styleGroups[groupKey].rows[i].length; j++) {
-                            if (counter === cellIndex) {
-                                rowIndex = i;
-                                colIdx = j;
-                                break outer;
+                    // Hitung posisi sel yang sebenarnya dengan mempertimbangkan colspan/rowspan
+                    let currentColIndex = 0;
+                    let found = false;
+
+                    for (let i = 0; i < styleGroups[groupKey].rows.length && !found; i++) {
+                        for (let j = 0; j < styleGroups[groupKey].rows[i].length && !found; j++) {
+                            const cell = styleGroups[groupKey].rows[i][j];
+                            const colspan = cell.colspan || 1;
+
+                            if (currentColIndex === colIndex) {
+                                cell.width = `${newWidthPercent.toFixed(2)}%`;
+                                found = true;
                             }
-                            counter++;
+
+                            currentColIndex += colspan;
                         }
-                    }
-                    const cell = styleGroups[groupKey].rows?.[rowIndex]?.[colIdx];
-                    if (cell) {
-                        cell.width = `${newWidthPercent.toFixed(2)}%`;
                     }
                 } else {
                     if (!styleGroups.columnWidths) styleGroups.columnWidths = [];
@@ -2271,16 +2641,22 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function toggleCustomInputs() {
-        const isCustom = selectorVars.paperSize.value === "custom";
-        customPaperInputs.classList.toggle("hidden", !isCustom);
-        selectorVars.customWidth.disabled = !isCustom;
-        selectorVars.customHeight.disabled = !isCustom;
+        const paperSize = document.getElementById('paperSize')?.value;
+        const customPaperInputs = document.getElementById('customPaperInputs');
+        const customWidth = document.getElementById('customWidth');
+        const customHeight = document.getElementById('customHeight');
+        
+        if (customPaperInputs && customWidth && customHeight) {
+            const isCustom = paperSize === "custom";
+            customPaperInputs.classList.toggle("hidden", !isCustom);
+            customWidth.disabled = !isCustom;
+            customHeight.disabled = !isCustom;
+        }
     }
 
     function setPreviewSize() {
         const paperSize = selectorVars.paperSize.value;
         const paperOrientation = selectorVars.paperOrientation.value;
-        const previewElement = document.getElementById('preview');
 
         let width = 210, height = 297; // default A4
 
@@ -2298,12 +2674,12 @@ document.addEventListener("DOMContentLoaded", () => {
             [width, height] = [height, width];
         }
 
-        previewElement.style.position = "relative"; // penting untuk footer absolute
-        previewElement.style.overflow = "hidden";   // supaya tidak muncul scroll
-        previewElement.style.width = `${width}mm`;
-        previewElement.style.height = `${height}mm`;
-        previewElement.style.border = "1px solid #ccc";
-        previewElement.style.backgroundColor = styleGroups.bodyStyle["background-color"];
+        preview.style.position = "relative"; // penting untuk footer absolute
+        preview.style.overflow = "hidden";   // supaya tidak muncul scroll
+        preview.style.width = `${width}mm`;
+        preview.style.height = `${height}mm`;
+        preview.style.border = "1px solid #ccc";
+        preview.style.backgroundColor = styleGroups.bodyStyle["background-color"];
     }
 
 
@@ -2382,12 +2758,25 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
 
-    downloadButton.addEventListener('click', () => {
-        // const values = PDFDesigner.getSelectorValues();
-        // console.log("Data dikirim ke backend:", values);
-        // const params = new URLSearchParams(values).toString();
-        // PDFDesigner.open(`public/download.php?type=pdf&${params}`, "_blank");
-        downloadPDF();
+
+    // Update event listener untuk tombol download
+    downloadButton.addEventListener('click', async () => {
+        const selectedOption = await showDownloadOptions();
+
+        switch (selectedOption) {
+            case 'pdf':
+                downloadPDF();
+                break;
+            case 'csv':
+                downloadCSV();
+                break;
+            case 'excel':
+                downloadExcel();
+                break;
+            default:
+                // User membatalkan
+                break;
+        }
     });
 
     deleteTemplateButton.addEventListener("click", deleteTemplate);

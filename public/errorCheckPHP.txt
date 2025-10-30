@@ -1,2 +1,4 @@
-bottom-center
+none
+none
+none
 top-left
