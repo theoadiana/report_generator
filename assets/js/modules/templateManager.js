@@ -49,9 +49,6 @@ export class TemplateManager {
                 templates,
                 this.templateSelector.value
             );
-
-            // if (!filename) return;
-
             // Remove .json extension if present
             if (filename.endsWith('.json')) {
                 filename = filename.replace('.json', '');
