@@ -49,7 +49,7 @@ require_once __DIR__ . '/public/download.php';
             <button class="tab-button text-gray-600 hover:text-black py-1 px-2 border-b border-transparent"
                 data-tab="query">Query</button>
             <select id="report_generator_templateSelector" class="border p-1 rounded-sm text-xs">
-                <option value="">Chose a Template</option>
+                <option value="">Choose a Template</option>
             </select>
             <button id="report_generator_download" type="submit"
                 class="bg-green-600 text-white px-2 py-1 rounded-sm hover:bg-green-700 text-xs">
