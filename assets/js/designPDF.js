@@ -3,9 +3,12 @@ import { ZoomManager } from "./modules/zoomManager.js";
 import { DialogManager } from "./modules/dialogManager.js";
 import { DownloadManager } from "./modules/downloadManager.js";
 import { TemplateManager } from "./modules/templateManager.js";
+import { StyleManager } from "./modules/styleManager.js";
 
 document.addEventListener("DOMContentLoaded", () => {
     const manager = new SelectorManager();
+    const styleManager = new StyleManager();
+    const styleGroups = styleManager.getStyleGroups();
     const downloadButton = document.getElementById("report_generator_download");
     const zoomManager = new ZoomManager('previewFooter', 'preview');
     const dialogManager = new DialogManager();
@@ -38,10 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
         },
 
         getStyleString(styleObj) {
-            // console.log("styleObj", styleObj);
-            return Object.entries(styleObj)
-                .map(([key, value]) => `${key}: ${value}`)
-                .join('; ');
+            return styleManager.getStyleString(styleObj);
         },
 
         updateSelectorValues(newValues = {}) {
@@ -116,240 +116,6 @@ document.addEventListener("DOMContentLoaded", () => {
     ].forEach((id) => manager.register(id));
 
     const selectorVars = manager.generateSelectorVariables();
-    const styleGroups = {
-        headerTableStyle: {
-            'font-size': '16px',
-            'font-weight': 'bold',
-            'color': '#000000',
-            'text-align': 'center',
-            'background-color': '#ffffff',
-            'border': '1px solid #000000',
-            'line-height': '1.1',
-        },
-        rowTableStyle: {
-            'font-size': '12px',
-            'font-weight': 'normal',
-            'color': '#000000',
-            'text-align': 'left',
-            'background-color': '#f9f9f9',
-            'border': '1px solid #000000',
-            'padding': '6px',
-            'line-height': '1.1',
-        },
-        tableStyle: {
-            'width': '100%',
-            'border-collapse': 'collapse',
-            'table-layout': 'fixed',
-            'word-wrap': 'break-word',
-        },
-        bodyStyle: {
-            'box-sizing': 'border-box',
-            'font-family': 'Arial, sans-serif',
-            'background-color': '#ffffff',
-        },
-        columnWidths: [],
-        headerDisplayRule: "every-page",
-        footerDisplayRule: "every-page",
-        pageNumberPosition: "none",
-        headerStyle: {
-            rows: [
-                [
-                    {
-                        content: "Cell 1",
-                        tag: "div",
-                        colspan: 1,
-                        rowspan: 1,
-                        width: 120,
-                        height: 25,
-                        styles: {
-                            "text-align": "center",
-                            "font-size": "16px",
-                            "font-weight": "700",
-                            "background-color": "#ffffff",
-                            "color": "#000000",
-                        }
-                    },
-                    {
-                        content: "Cell 2",
-                        tag: "div",
-                        colspan: 1,
-                        rowspan: 1,
-                        width: 120,
-                        height: 25,
-                        styles: {
-                            "text-align": "center",
-                            "font-size": "16px",
-                            "font-weight": "700",
-                            "background-color": "#ffffff",
-                            "color": "#000000",
-                        }
-                    },
-                    {
-                        content: "Cell 3",
-                        tag: "div",
-                        colspan: 1,
-                        rowspan: 1,
-                        width: 120,
-                        height: 25,
-                        styles: {
-                            "text-align": "center",
-                            "font-size": "16px",
-                            "font-weight": "700",
-                            "background-color": "#ffffff",
-                            "color": "#000000",
-                        }
-                    }
-                ],
-                [
-                    {
-                        content: "Cell 4",
-                        tag: "div",
-                        colspan: 1,
-                        rowspan: 1,
-                        width: 120,
-                        height: 25,
-                        styles: {
-                            "text-align": "center",
-                            "font-size": "16px",
-                            "font-weight": "700",
-                            "background-color": "#ffffff",
-                            "color": "#000000",
-                        }
-                    },
-                    {
-                        content: "Cell 5",
-                        tag: "div",
-                        colspan: 1,
-                        rowspan: 1,
-                        width: 120,
-                        height: 25,
-                        styles: {
-                            "text-align": "center",
-                            "font-size": "16px",
-                            "font-weight": "700",
-                            "background-color": "#ffffff",
-                            "color": "#000000",
-                        }
-                    },
-                    {
-                        content: "Cell 6",
-                        tag: "div",
-                        colspan: 1,
-                        rowspan: 1,
-                        width: 120,
-                        height: 25,
-                        styles: {
-                            "text-align": "center",
-                            "font-size": "16px",
-                            "font-weight": "700",
-                            "background-color": "#ffffff",
-                            "color": "#000000",
-                        }
-                    }
-                ]
-            ]
-        },
-        footerStyle: {
-            rows: [
-                [
-                    {
-                        content: "Cell 1",
-                        tag: "div",
-                        colspan: 1,
-                        rowspan: 1,
-                        width: 120,
-                        height: 25,
-                        styles: {
-                            "text-align": "center",
-                            "font-size": "16px",
-                            "font-weight": "700",
-                            "background-color": "#ffffff",
-                            "color": "#000000",
-                        }
-                    },
-                    {
-                        content: "Cell 2",
-                        tag: "div",
-                        colspan: 1,
-                        rowspan: 1,
-                        width: 120,
-                        height: 25,
-                        styles: {
-                            "text-align": "center",
-                            "font-size": "16px",
-                            "font-weight": "700",
-                            "background-color": "#ffffff",
-                            "color": "#000000",
-                        }
-                    },
-                    {
-                        content: "Cell 3",
-                        tag: "div",
-                        colspan: 1,
-                        rowspan: 1,
-                        width: 120,
-                        height: 25,
-                        styles: {
-                            "text-align": "center",
-                            "font-size": "16px",
-                            "font-weight": "700",
-                            "background-color": "#ffffff",
-                            "color": "#000000",
-                        }
-                    }
-                ],
-                [
-                    {
-                        content: "Cell 4",
-                        tag: "div",
-                        colspan: 1,
-                        rowspan: 1,
-                        width: 120,
-                        height: 25,
-                        styles: {
-                            "text-align": "center",
-                            "font-size": "16px",
-                            "font-weight": "700",
-                            "background-color": "#ffffff",
-                            "color": "#000000",
-                        }
-                    },
-                    {
-                        content: "Cell 5",
-                        tag: "div",
-                        colspan: 1,
-                        rowspan: 1,
-                        width: 120,
-                        height: 25,
-                        styles: {
-                            "text-align": "center",
-                            "font-size": "16px",
-                            "font-weight": "700",
-                            "background-color": "#ffffff",
-                            "color": "#000000",
-                        }
-                    },
-                    {
-                        content: "Cell 6",
-                        tag: "div",
-                        colspan: 1,
-                        rowspan: 1,
-                        width: 120,
-                        height: 25,
-                        styles: {
-                            "text-align": "center",
-                            "font-size": "16px",
-                            "font-weight": "700",
-                            "background-color": "#ffffff",
-                            "color": "#000000",
-                        }
-                    }
-                ]
-            ]
-        },
-
-    };
-
     const downloadManager = new DownloadManager(buildPDFParams);
     const templateManager = new TemplateManager(manager, styleGroups, dialogManager);
 
@@ -484,38 +250,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return styleStructure;
     }
 
-
-    function normalizeStyleValue(attr, value) {
-        // Properti yang perlu satuan px otomatis
-        const pxProperties = [
-            'font-size', 'padding', 'margin',
-            'padding-top', 'padding-bottom', 'padding-left', 'padding-right',
-            'margin-top', 'margin-bottom', 'margin-left', 'margin-right',
-            'border-width', 'border-top-width', 'border-bottom-width', 'border-left-width', 'border-right-width'
-        ];
-
-        if (pxProperties.includes(attr) && !value.toString().endsWith('px')) {
-            return value + 'px';
-        }
-
-        // Aturan khusus untuk properti 'border' yang mengandung beberapa nilai
-        if (attr === 'border') {
-            // value misal "1 solid #000000"
-            // kita pastikan format benar, jika nilai borderWidth adalah angka tanpa satuan, tambahkan px
-            let parts = value.split(' ');
-            if (parts.length === 3) {
-                let [width, style, color] = parts;
-                if (!width.endsWith('px') && !isNaN(width)) {
-                    width = width + 'px';
-                }
-                return [width, style, color].join(' ');
-            }
-            return value; // fallback jika format tidak sesuai
-        }
-
-        return value;
-    }
-
     document.addEventListener("input", (e) => {
         if (e.target.isContentEditable) {
             const td = e.target.closest("td");
@@ -545,7 +279,7 @@ document.addEventListener("DOMContentLoaded", () => {
             let value = input.value;
 
             // Normalisasi satuan, misal px
-            value = normalizeStyleValue(attr, value);
+            value = styleManager.normalizeStyleValue(attr, value);
 
             // Handler khusus untuk cell berbasis tabel
             if (group === 'headerStyleCell' || group === 'footerStyleCell') {
@@ -921,8 +655,6 @@ document.addEventListener("DOMContentLoaded", () => {
             enableDragAndDrop("table_footer_style");
         }
     }
-
-
 
     function enableDragAndDrop(tableId = "table_header_style") {
         const table = document.getElementById(tableId);
@@ -1375,20 +1107,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    function rgbToHex(rgb) {
-        const result = rgb.match(/\d+/g);
-        if (!result || result.length < 3) return null;
-        const hex = result
-            .slice(0, 3)
-            .map(x => {
-                const hexPart = parseInt(x).toString(16);
-                return hexPart.length === 1 ? "0" + hexPart : hexPart;
-            })
-            .join("");
-        return "#" + hex;
-    }
-
-
     document.addEventListener("click", (event) => {
         const td = event.target.closest("td");
         const table = td?.closest("table");
@@ -1438,7 +1156,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     value = parseFloat(value) || '';
                 }
                 if (attr.indexOf("color") !== -1 && typeof value === 'string' && value.startsWith("rgb")) {
-                    value = rgbToHex(value);
+                    value = styleManager.rgbToHex(value);
                 }
                 input.value = value;
             });
@@ -1714,80 +1432,6 @@ document.addEventListener("DOMContentLoaded", () => {
             styleGroups.pageNumberPosition = "none";
             if (pageNumberPositionSelect) pageNumberPositionSelect.value = "none";
         }
-    }
-
-    // Fungsi baru untuk update semua input form berdasarkan template
-    function updateFormInputsFromTemplate(template) {
-        // Update Paper Settings
-        if (template.paperSize) {
-            const paperSizeSelect = document.getElementById('paperSize');
-            if (paperSizeSelect) paperSizeSelect.value = template.paperSize;
-        }
-
-        if (template.paperOrientation) {
-            const paperOrientationSelect = document.getElementById('paperOrientation');
-            if (paperOrientationSelect) paperOrientationSelect.value = template.paperOrientation;
-        }
-
-        if (template.customWidth) {
-            const customWidthInput = document.getElementById('customWidth');
-            if (customWidthInput) customWidthInput.value = template.customWidth;
-        }
-
-        if (template.customHeight) {
-            const customHeightInput = document.getElementById('customHeight');
-            if (customHeightInput) customHeightInput.value = template.customHeight;
-        }
-
-        // Update Layout Options
-        if (template.headerDisplayRule) {
-            const headerDisplaySelect = document.getElementById('headerDisplayRule');
-            if (headerDisplaySelect) headerDisplaySelect.value = template.headerDisplayRule;
-        }
-
-        if (template.footerDisplayRule) {
-            const footerDisplaySelect = document.getElementById('footerDisplayRule');
-            if (footerDisplaySelect) footerDisplaySelect.value = template.footerDisplayRule;
-        }
-
-        if (template.pageNumberPosition) {
-            const pageNumberSelect = document.getElementById('pageNumberPosition');
-            if (pageNumberSelect) pageNumberSelect.value = template.pageNumberPosition;
-        }
-
-        // Update Header Table Style inputs
-        updateStyleInputsFromObject('headerTableStyle', template.headerTableStyle || {});
-
-        // Update Row Table Style inputs  
-        updateStyleInputsFromObject('rowTableStyle', template.rowTableStyle || {});
-
-        // Update Body Style inputs
-        updateStyleInputsFromObject('bodyStyle', template.bodyStyle || {});
-
-        // Toggle custom paper inputs jika perlu
-        toggleCustomInputs();
-    }
-
-    // Fungsi helper untuk update style inputs berdasarkan group
-    function updateStyleInputsFromObject(styleGroup, styleObject) {
-        document.querySelectorAll(`[data-style-group="${styleGroup}"]`).forEach(input => {
-            const attr = input.dataset.styleAttr;
-            if (attr && styleObject[attr] !== undefined) {
-                let value = styleObject[attr];
-
-                // Handle color values (convert rgb to hex jika perlu)
-                if (attr.includes('color') && typeof value === 'string' && value.startsWith('rgb')) {
-                    value = rgbToHex(value);
-                }
-
-                // Handle number values (remove 'px' jika ada)
-                if (input.type === 'number' && typeof value === 'string' && value.endsWith('px')) {
-                    value = parseFloat(value);
-                }
-
-                input.value = value;
-            }
-        });
     }
 
     templateManager.fetchTemplateList();
@@ -2137,7 +1781,7 @@ document.addEventListener("DOMContentLoaded", () => {
             templateManager.loadTemplate(
                 selectedValue, 
                 PDFDesigner, 
-                updateFormInputsFromTemplate,
+                (template) => styleManager.updateFormInputsFromTemplate(template),
                 setPreviewSize, 
                 generatePreview
             );
