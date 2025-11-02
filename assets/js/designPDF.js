@@ -4,11 +4,13 @@ import { DialogManager } from "./modules/dialogManager.js";
 import { DownloadManager } from "./modules/downloadManager.js";
 import { TemplateManager } from "./modules/templateManager.js";
 import { StyleManager } from "./modules/styleManager.js";
+import { PreviewManager } from "./modules/previewManager.js";
 
 document.addEventListener("DOMContentLoaded", () => {
     const manager = new SelectorManager();
     const styleManager = new StyleManager();
     const styleGroups = styleManager.getStyleGroups();
+    const previewManager = new PreviewManager(styleManager, manager);
     const downloadButton = document.getElementById("report_generator_download");
     const zoomManager = new ZoomManager('previewFooter', 'preview');
     const dialogManager = new DialogManager();
@@ -25,8 +27,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const footer = document.getElementById("previewFooter");
 
     let cachedData = [];
-    toggleStyleInputs('headerStyleCell', false);
-    toggleStyleInputs('footerStyleCell', false);
+    previewManager.toggleStyleInputs('headerStyleCell', false);
+    previewManager.toggleStyleInputs('footerStyleCell', false);
     const PDFDesigner = {
         isResizing: false,
         getSelectorValues() {
@@ -317,7 +319,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // Atur ukuran preview terlebih dahulu (fungsi Anda tetap dipanggil)
-        setPreviewSize();
+        previewManager.setPreviewSize(preview, selectorVars);
 
         const headers = Object.keys(data[0]);
 
@@ -329,44 +331,16 @@ document.addEventListener("DOMContentLoaded", () => {
             "{{logo_url}}": "https://via.placeholder.com/100x50?text=Logo"
         };
 
-        function replacePlaceholders(str) {
-            if (!str || typeof str !== "string") return str;
-            return Object.entries(placeholderValues).reduce((result, [key, value]) => {
-                return result.replaceAll(key, value);
-            }, str);
-        }
+        const replacePlaceholders = (str) => previewManager.replacePlaceholders(str);
 
-        // Helper: konversi berbagai unit menjadi mm (mengembalikan angka dalam mm)
-        function parseLengthToMm(val, fallbackMm = 20) {
-            if (!val && val !== 0) return fallbackMm;
-            val = String(val).trim().toLowerCase();
-            // Jika hanya angka tanpa unit, anggap px (umumnya)
-            const pxPerMm = 3.78;
-            if (val.endsWith("mm")) {
-                return parseFloat(val) || fallbackMm;
-            } else if (val.endsWith("cm")) {
-                return (parseFloat(val) * 10) || fallbackMm;
-            } else if (val.endsWith("px")) {
-                return (parseFloat(val) / pxPerMm) || fallbackMm;
-            } else if (val.endsWith("in")) {
-                return (parseFloat(val) * 25.4) || fallbackMm;
-            } else if (val.endsWith("%")) {
-                // persen tidak dapat dikonversi ke mm dengan pasti -> fallback
-                return fallbackMm;
-            } else {
-                // coba parse number, anggap px
-                const n = parseFloat(val);
-                if (isNaN(n)) return fallbackMm;
-                return n / pxPerMm;
-            }
-        }
+        const parseLengthToMm = (val, fallbackMm) => previewManager.parseLengthToMm(val, fallbackMm);
 
         const styleTag = `
             <style>
-                .generatorPDF { ${PDFDesigner.getStyleString(styleGroups.bodyStyle)} }
-                .generatorPDF-table { ${PDFDesigner.getStyleString(styleGroups.tableStyle)} }
-                .generatorPDF-th { ${PDFDesigner.getStyleString(styleGroups.headerTableStyle)} }
-                .generatorPDF-td { ${PDFDesigner.getStyleString(styleGroups.rowTableStyle)} }
+                .generatorPDF { ${styleManager.getStyleString(styleGroups.bodyStyle)} }
+                .generatorPDF-table { ${styleManager.getStyleString(styleGroups.tableStyle)} }
+                .generatorPDF-th { ${styleManager.getStyleString(styleGroups.headerTableStyle)} }
+                .generatorPDF-td { ${styleManager.getStyleString(styleGroups.rowTableStyle)} }
                 .resizable-wrapper {
                     width: 100%;
                     height: 100%;
@@ -630,7 +604,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const table = document.querySelector("#preview #table_resizeable");
         if (table) {
             makeTableResizable(table);
-            applyColumnWidths(table);
+            previewManager.applyColumnWidths(table, styleGroups);
         }
 
         // Hanya buat header dan footer resizable jika tidak disabled
@@ -1127,8 +1101,8 @@ document.addEventListener("DOMContentLoaded", () => {
             document.querySelectorAll("#table_header_style td, #table_footer_style td").forEach(cell => {
                 cell.classList.remove("selected-td", "outline-dashed", "outline-2", "outline-blue-500", "bg-blue-100");
             });
-            toggleStyleInputs('headerStyleCell', false);
-            toggleStyleInputs('footerStyleCell', false);
+            previewManager.toggleStyleInputs('headerStyleCell', false);
+            previewManager.toggleStyleInputs('footerStyleCell', false);
         };
 
         if (td && (table?.id === "table_header_style" || table?.id === "table_footer_style")) {
@@ -1140,7 +1114,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const styleKey = isHeader ? 'headerStyle' : 'footerStyle';
             const inputGroup = isHeader ? 'headerStyleCell' : 'footerStyleCell';
 
-            toggleStyleInputs(inputGroup, true);
+            previewManager.toggleStyleInputs(inputGroup, true);
 
             const rowIndex = td.parentElement.rowIndex;
             const cellIndex = td.cellIndex;
@@ -1167,13 +1141,6 @@ document.addEventListener("DOMContentLoaded", () => {
             clearSelection();
         }
     });
-
-    function toggleStyleInputs(groupName, show) {
-        document.querySelectorAll(`[data-style-group='${groupName}']`).forEach(input => {
-            input.parentElement.style.display = show ? "block" : "none";
-        });
-    }
-
 
     // Tombol tambah selector
     const addSelectorBtn = document.getElementById("addSelectorBtn");
@@ -1304,28 +1271,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 cell.styles[attr] = styleValue;
 
-                updateSingleCellStyle(rowIndex, cellIndex, group);
+                previewManager.updateSingleCellStyle(rowIndex, cellIndex, group);
             });
-        });
-    }
-
-
-    function updateSingleCellStyle(rowIndex, cellIndex, group = "headerStyle") {
-        const groupData = styleGroups[group];
-        if (!groupData?.rows?.[rowIndex]?.[cellIndex]) return;
-
-        const cellData = groupData.rows[rowIndex][cellIndex];
-
-        const tableId = group === "footerStyle" ? "table_footer_style" : "table_header_style";
-        const td = document.querySelector(`#${tableId} tr:nth-child(${rowIndex + 1}) td:nth-child(${cellIndex + 1})`);
-        if (!td) return;
-
-        const innerEl = td.querySelector(cellData.tag || "div");
-        if (!innerEl) return;
-
-        const styles = cellData.styles || {};
-        Object.entries(styles).forEach(([key, val]) => {
-            innerEl.style[key] = val;
         });
     }
 
@@ -1451,6 +1398,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // ambil hanya 5 data pertama
         cachedData = result.data.slice(0, 5);
+        previewManager.setCachedData(cachedData);
         renderPreview(cachedData);
     }
 
@@ -1622,65 +1570,10 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-
-    function applyColumnWidths(table) {
-        if (!styleGroups.columnWidths) return;
-        const cols = table.querySelectorAll("th");
-        cols.forEach((col, i) => {
-            const width = styleGroups.columnWidths[i];
-            if (width) {
-                col.style.width = width;
-            }
-        });
-    }
-
-    function toggleCustomInputs() {
-        const paperSize = document.getElementById('paperSize')?.value;
-        const customPaperInputs = document.getElementById('customPaperInputs');
-        const customWidth = document.getElementById('customWidth');
-        const customHeight = document.getElementById('customHeight');
-
-        if (customPaperInputs && customWidth && customHeight) {
-            const isCustom = paperSize === "custom";
-            customPaperInputs.classList.toggle("hidden", !isCustom);
-            customWidth.disabled = !isCustom;
-            customHeight.disabled = !isCustom;
-        }
-    }
-
-    function setPreviewSize() {
-        const paperSize = selectorVars.paperSize.value;
-        const paperOrientation = selectorVars.paperOrientation.value;
-
-        let width = 210, height = 297; // default A4
-
-        switch (paperSize) {
-            case "A4": width = 210; height = 297; break;
-            case "A5": width = 148; height = 210; break;
-            case "Letter": width = 216; height = 279; break;
-            case "custom":
-                width = parseFloat(selectorVars.customWidth.value) || 210;
-                height = parseFloat(selectorVars.customHeight.value) || 297;
-                break;
-        }
-
-        if (paperOrientation === "landscape") {
-            [width, height] = [height, width];
-        }
-
-        preview.style.position = "relative"; // penting untuk footer absolute
-        preview.style.overflow = "hidden";   // supaya tidak muncul scroll
-        preview.style.width = `${width}mm`;
-        preview.style.height = `${height}mm`;
-        preview.style.border = "1px solid #ccc";
-        preview.style.backgroundColor = styleGroups.bodyStyle["background-color"];
-    }
-
-
-    selectorVars.paperSize.addEventListener("change", toggleCustomInputs);
-    toggleCustomInputs();
-    selectorVars.paperSize.addEventListener("change", setPreviewSize);
-    selectorVars.paperOrientation.addEventListener("change", setPreviewSize);
+    selectorVars.paperSize.addEventListener("change", () => previewManager.toggleCustomInputs());
+    previewManager.toggleCustomInputs();
+    selectorVars.paperSize.addEventListener("change", () => previewManager.setPreviewSize(preview, selectorVars));
+    selectorVars.paperOrientation.addEventListener("change", () => previewManager.setPreviewSize(preview, selectorVars));
     document.querySelectorAll('[data-style-group]').forEach(input => {
         input.addEventListener('input', handleInputChange);
         input.addEventListener('change', handleInputChange);
@@ -1720,9 +1613,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Panggil ulang update tampilan cell individual jika perlu
             if (section === "header") {
-                updateSingleCellStyle(rowIndex, cellIndex);
+                previewManager.updateSingleCellStyle(rowIndex, cellIndex);
             } else {
-                updateSingleCellStyle(rowIndex, cellIndex);
+                previewManager.updateSingleCellStyle(rowIndex, cellIndex);
             }
         }
 
@@ -1782,7 +1675,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 selectedValue, 
                 PDFDesigner, 
                 (template) => styleManager.updateFormInputsFromTemplate(template),
-                setPreviewSize, 
+                () => previewManager.setPreviewSize(preview, selectorVars), 
                 generatePreview
             );
         }
