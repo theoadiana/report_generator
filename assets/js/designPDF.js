@@ -6,12 +6,15 @@ import { TemplateManager } from "./modules/templateManager.js";
 import { StyleManager } from "./modules/styleManager.js";
 import { PreviewManager } from "./modules/previewManager.js";
 import { TableEditor } from "./modules/tableEditor.js";
+import { EventManager } from "./modules/eventManager.js";
+import { UtilityManager } from "./modules/utilityManager.js";
 
 document.addEventListener("DOMContentLoaded", () => {
     const manager = new SelectorManager();
     const styleManager = new StyleManager();
     const styleGroups = styleManager.getStyleGroups();
     const previewManager = new PreviewManager(styleManager, manager);
+    const utilityManager = new UtilityManager(styleManager, manager);
     const downloadButton = document.getElementById("report_generator_download");
     const zoomManager = new ZoomManager('previewFooter', 'preview');
     const dialogManager = new DialogManager();
@@ -68,6 +71,12 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const tableEditor = new TableEditor(styleManager, PDFDesigner);
+    const eventManager = new EventManager(styleManager, previewManager, tableEditor, manager, styleGroups);
+
+    eventManager.setupContentEditableListeners();
+    eventManager.setupCellSelectionListeners();
+    eventManager.setupStyleInputListeners();
+    eventManager.setupPopoverCleanup();
 
     queryExecuteButton.addEventListener('click', () => {
         const query = document.getElementById('manualQueryInput').value;
@@ -92,7 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
             })
             .then(data => {
                 if (data.success) {
-                    updateStyleGroupsFromInputs();
+                    utilityManager.updateStyleGroupsFromInputs(styleGroups);
                     generatePreview(); // Fetch data baru
                 } else {
                     alert('Error: ' + data.error);
@@ -124,6 +133,31 @@ document.addEventListener("DOMContentLoaded", () => {
     const downloadManager = new DownloadManager(buildPDFParams);
     const templateManager = new TemplateManager(manager, styleGroups, dialogManager);
 
+    eventManager.setupPaperSizeListeners(selectorVars, preview);
+
+    eventManager.setInputChangeCallback((rowIndex, cellIndex, section) => {
+        utilityManager.updateStyleGroupsFromInputs(styleGroups);
+        renderPreview(cachedData);
+
+        if (rowIndex !== -1 && cellIndex !== -1) {
+            const selector = section === "header"
+                ? `#table_header_style tr:nth-child(${rowIndex + 1}) td:nth-child(${cellIndex + 1})`
+                : `#table_footer_style tr:nth-child(${rowIndex + 1}) td:nth-child(${cellIndex + 1})`;
+
+            const restoredCell = document.querySelector(selector);
+            if (restoredCell) {
+                restoredCell.classList.add("selected-td", "outline-dashed", "outline-2", "outline-blue-500", "bg-blue-100");
+            }
+
+            if (section === "header") {
+                previewManager.updateSingleCellStyle(rowIndex, cellIndex);
+            } else {
+                previewManager.updateSingleCellStyle(rowIndex, cellIndex);
+            }
+        }
+
+        utilityManager.initStyleCellInputs(styleGroups, previewManager, section);
+    });
 
     (async () => {
         try {
@@ -134,186 +168,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
             styleGroups.columnWidths = Array.from({ length: columnCount }, () => percentage);
 
-            // console.log("Column widths set (percent-based):", styleGroups.columnWidths);
+            console.log("Column widths set (percent-based):", styleGroups.columnWidths);
         } catch (error) {
-            console.error("Gagal mengambil data untuk columnWidths:", error);
+            console.error("Failed to fetch data for columnWidths:", error);
         }
     })();
-
-    function buildStyleStructureFromDOM(tableId = "table_header_style") {
-        const table = document.getElementById(tableId);
-        const styleStructure = { rows: [] };
-
-        if (!table) return styleStructure;
-
-        const rows = table.querySelectorAll("tr");
-
-        // Hitung jumlah kolom maksimum dengan mempertimbangkan colspan
-        let maxCols = 0;
-        const colSpans = []; // Untuk melacak colspan per kolom
-
-        rows.forEach(tr => {
-            const cells = tr.querySelectorAll("td");
-            let colIndex = 0;
-            let rowCols = 0;
-
-            cells.forEach(td => {
-                const colspan = parseInt(td.getAttribute('colspan')) || 1;
-                rowCols += colspan;
-            });
-
-            maxCols = Math.max(maxCols, rowCols);
-        });
-
-        // Hitung total lebar dari semua kolom (menggunakan baris pertama sebagai referensi)
-        let totalWidth = 0;
-        const firstRowCells = rows[0]?.querySelectorAll("td") || [];
-
-        // Buat array untuk menyimpan lebar setiap kolom
-        const columnWidths = new Array(maxCols).fill(0);
-
-        // Hitung lebar aktual setiap kolom dengan mempertimbangkan semua baris
-        rows.forEach(tr => {
-            const cells = tr.querySelectorAll("td");
-            let colIndex = 0;
-
-            cells.forEach(td => {
-                const colspan = parseInt(td.getAttribute('colspan')) || 1;
-                const widthPx = td.offsetWidth || 0;
-                const widthPerCol = widthPx / colspan;
-
-                // Distribusikan lebar ke semua kolom yang dicakup oleh colspan
-                for (let i = 0; i < colspan; i++) {
-                    if (colIndex + i < maxCols) {
-                        columnWidths[colIndex + i] = Math.max(columnWidths[colIndex + i], widthPerCol);
-                    }
-                }
-                colIndex += colspan;
-            });
-        });
-
-        // Hitung total lebar dari semua kolom
-        totalWidth = columnWidths.reduce((sum, width) => sum + width, 0);
-
-        // Bangun struktur data
-        rows.forEach(tr => {
-            const row = [];
-            const cells = tr.querySelectorAll("td");
-            let colIndex = 0;
-
-            cells.forEach(td => {
-                const tag = td.dataset.tag || 'div';
-                const colspan = parseInt(td.getAttribute('colspan')) || 1;
-                const rowspan = parseInt(td.getAttribute('rowspan')) || 1;
-                const widthPx = td.offsetWidth || 0;
-                const heightPx = td.offsetHeight || 0;
-
-                // Hitung lebar dalam persen berdasarkan total lebar semua kolom
-                const width = totalWidth > 0 ? ((widthPx / totalWidth) * 100).toFixed(2) + '%' : 'auto';
-                const height = heightPx;
-
-                // Gabungkan style inline dari td dan elemen anak pertama
-                const styleObj = {};
-                const extractStyles = (styleText) => {
-                    styleText.split(';').forEach(rule => {
-                        if (rule.includes(':')) {
-                            const [key, value] = rule.split(':');
-                            if (key && value) {
-                                styleObj[key.trim()] = value.trim();
-                            }
-                        }
-                    });
-                };
-
-                extractStyles(td.style.cssText);
-                const inner = td.querySelector("*");
-                if (inner && inner.style) {
-                    extractStyles(inner.style.cssText);
-                }
-
-                // Clone cell dan hapus elemen-elemen kontrol sebelum ambil isi kontennya
-                const tempClone = td.cloneNode(true);
-                tempClone.querySelectorAll(".drag-handle, .btn-remove-cell, .btn-add-cell, button, .btn-add, .btn-delete").forEach(el => el.remove());
-                const content = tempClone.textContent.trim();
-
-                row.push({
-                    content,
-                    tag,
-                    colspan,
-                    rowspan,
-                    width,
-                    height,
-                    styles: styleObj
-                });
-
-                colIndex += colspan;
-            });
-
-            styleStructure.rows.push(row);
-        });
-
-        return styleStructure;
-    }
-
-    document.addEventListener("input", (e) => {
-        if (e.target.isContentEditable) {
-            const td = e.target.closest("td");
-            const table = td?.closest("table");
-            if (!td || !table) return;
-
-            const isHeader = table.id === "table_header_style";
-            const isFooter = table.id === "table_footer_style";
-            const group = isHeader ? "headerStyle" : isFooter ? "footerStyle" : null;
-            if (!group) return;
-
-            const rowIndex = td.parentElement.rowIndex;
-            const cellIndex = td.cellIndex;
-
-            const cell = styleGroups?.[group]?.rows?.[rowIndex]?.[cellIndex];
-            if (!cell) return;
-
-            cell.content = e.target.textContent;
-        }
-    });
-
-
-    function updateStyleGroupsFromInputs() {
-        document.querySelectorAll('[data-style-group]').forEach(input => {
-            const group = input.dataset.styleGroup;
-            const attr = input.dataset.styleAttr;
-            let value = input.value;
-
-            // Normalisasi satuan, misal px
-            value = styleManager.normalizeStyleValue(attr, value);
-
-            // Handler khusus untuk cell berbasis tabel
-            if (group === 'headerStyleCell' || group === 'footerStyleCell') {
-                const tableId = group === 'headerStyleCell' ? 'table_header_style' : 'table_footer_style';
-                const styleKey = group === 'headerStyleCell' ? 'headerStyle' : 'footerStyle';
-
-                const selectedTd = document.querySelector(`#${tableId} td.selected-td`);
-                if (!selectedTd) return;
-
-                const rowIndex = selectedTd.parentElement.rowIndex;
-                const cellIndex = selectedTd.cellIndex;
-
-                const cell = styleGroups[styleKey]?.rows?.[rowIndex]?.[cellIndex];
-                if (!cell) return;
-
-                if (!cell.styles) cell.styles = {};
-                cell.styles[attr] = value;
-
-                // Terapkan langsung ke DOM
-                const inner = selectedTd.querySelector("*");
-                if (inner) inner.style.setProperty(attr, value);
-            } else {
-                // Handler untuk global styleGroup biasa
-                if (!styleGroups[group]) styleGroups[group] = {};
-                styleGroups[group][attr] = value;
-            }
-        });
-    }
-
 
     function renderPreview(data) {
         if (!data || data.length === 0) {
@@ -609,67 +468,6 @@ document.addEventListener("DOMContentLoaded", () => {
         tableEditor.initializeTable("table_footer_style", styleGroups);
     }
 
-    document.addEventListener("click", (event) => {
-        const td = event.target.closest("td");
-        const table = td?.closest("table");
-
-        const headerTable = document.getElementById("table_header_style");
-        const footerTable = document.getElementById("table_footer_style");
-
-        const headerPanel = document.querySelector('[data-content="headerStyle"]');
-        const footerPanel = document.querySelector('[data-content="footerStyle"]');
-
-        const clickedInsideHeaderTable = headerTable?.contains(event.target);
-        const clickedInsideFooterTable = footerTable?.contains(event.target);
-
-        const clickedInsideHeaderPanel = headerPanel?.contains(event.target);
-        const clickedInsideFooterPanel = footerPanel?.contains(event.target);
-
-        const clearSelection = () => {
-            document.querySelectorAll("#table_header_style td, #table_footer_style td").forEach(cell => {
-                cell.classList.remove("selected-td", "outline-dashed", "outline-2", "outline-blue-500", "bg-blue-100");
-            });
-            previewManager.toggleStyleInputs('headerStyleCell', false);
-            previewManager.toggleStyleInputs('footerStyleCell', false);
-        };
-
-        if (td && (table?.id === "table_header_style" || table?.id === "table_footer_style")) {
-            clearSelection();
-
-            td.classList.add("selected-td", "outline-dashed", "outline-2", "outline-blue-500", "bg-blue-100");
-
-            const isHeader = table.id === "table_header_style";
-            const styleKey = isHeader ? 'headerStyle' : 'footerStyle';
-            const inputGroup = isHeader ? 'headerStyleCell' : 'footerStyleCell';
-
-            previewManager.toggleStyleInputs(inputGroup, true);
-
-            const rowIndex = td.parentElement.rowIndex;
-            const cellIndex = td.cellIndex;
-
-            const cellData = styleGroups[styleKey]?.rows?.[rowIndex]?.[cellIndex];
-            const styleObj = cellData?.styles || {};
-
-            document.querySelectorAll(`[data-style-group='${inputGroup}']`).forEach(input => {
-                const attr = input.dataset.styleAttr;
-                if (!attr) return;
-                let value = styleObj[attr] || '';
-                if (input.type === "number") {
-                    value = parseFloat(value) || '';
-                }
-                if (attr.indexOf("color") !== -1 && typeof value === 'string' && value.startsWith("rgb")) {
-                    value = styleManager.rgbToHex(value);
-                }
-                input.value = value;
-            });
-        }
-
-        // Klik di luar semua table dan panel
-        else if (!clickedInsideHeaderTable && !clickedInsideFooterTable && !clickedInsideHeaderPanel && !clickedInsideFooterPanel) {
-            clearSelection();
-        }
-    });
-
     // Tombol tambah selector
     const addSelectorBtn = document.getElementById("addSelectorBtn");
     addSelectorBtn.addEventListener("click", () => {
@@ -678,8 +476,8 @@ document.addEventListener("DOMContentLoaded", () => {
         if (newId && !manager.selectors[newId]) {
             manager.register(newId);
             alert(`Selector dengan ID "${newId}" berhasil ditambahkan!`);
-            updateSelectorTable();
-            updateHTMLPreview();
+            utilityManager.updateSelectorTable(manager);
+            utilityManager.updateHTMLPreview(manager);
         } else if (manager.selectors[newId]) {
             alert(`Gagal menambahkan. ID "${newId}" sudah terdaftar.`);
         } else {
@@ -689,127 +487,11 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("newSelectorId").value = "";
     });
 
-    function updateSelectorTable() {
-        const tableBody = document.getElementById("selectorTableBody");
-        tableBody.innerHTML = "";
-
-        const hiddenFields = [
-            "paperSize",
-            "paperOrientation",
-            "metaTitle",
-            "metaAuthor",
-            "metaSubject",
-            "customWidth",
-            "customHeight",
-        ];
-
-        const entries = Object.entries(manager.selectors);
-        let visibleIndex = 1; // Counter untuk nomor urut, hanya untuk selector yang ditampilkan
-
-        entries.forEach(([id, el]) => {
-            if (hiddenFields.includes(id)) return; // Lewati field tersembunyi
-
-            const value = el.content || "";
-            const row = document.createElement("tr");
-            row.innerHTML = `
-                <td class="p-2 border text-center">${visibleIndex++}</td>
-                <td class="p-2 border">${id}</td>
-                <td class="p-2 border">
-                    <select class="tagNameDropdown" data-id="${id}">
-                        <option value="div" ${el.tagName === "div" ? "selected" : ""
-                }>div</option>
-                        <option value="span" ${el.tagName === "span" ? "selected" : ""
-                }>span</option>
-                        <option value="h1" ${el.tagName === "h1" ? "selected" : ""
-                }>h1</option>
-                        <option value="p" ${el.tagName === "p" ? "selected" : ""
-                }>p</option>
-                        <option value="a" ${el.tagName === "a" ? "selected" : ""
-                }>a</option>
-                        <option value="button" ${el.tagName === "button" ? "selected" : ""
-                }>button</option>
-                        <option value="img" ${el.tagName === "img" ? "selected" : ""
-                }>img</option>
-                    </select>
-                </td>
-                <td class="p-2 border">
-                    <input type="text" class="contentInput" data-id="${id}" value="${value}" placeholder="Isi konten atau src img">
-                </td>
-            `;
-            tableBody.appendChild(row);
-        });
-
-        // Dropdown event handler
-        const tagNameDropdowns = document.querySelectorAll(".tagNameDropdown");
-        tagNameDropdowns.forEach((dropdown) => {
-            dropdown.addEventListener("change", (e) => {
-                const id = e.target.getAttribute("data-id");
-                const selectedTag = e.target.value;
-                manager.updateTagName(id, selectedTag);
-                updateSelectorTable();
-                updateHTMLPreview();
-            });
-        });
-
-        // Input konten event handler
-        const contentInputs = document.querySelectorAll(".contentInput");
-        contentInputs.forEach((input) => {
-            input.addEventListener("input", (e) => {
-                const id = e.target.getAttribute("data-id");
-                const value = e.target.value;
-                if (manager.selectors[id]) {
-                    manager.selectors[id].content = value;
-                    updateHTMLPreview();
-                }
-            });
-        });
-    }
-
-    function updateHTMLPreview() {
-        const previewContainer = document.getElementById("htmlPreview");
-        const selectors = manager.getAllValues();
-
-        let htmlCode = "";
-        for (const [id, selector] of Object.entries(selectors)) {
-            htmlCode += `<${selector.tagName} id="${id}">Content of ${id}</${selector.tagName}>\n`;
-        }
-
-        previewContainer.textContent = htmlCode;
-    }
-
-    function initStyleCellInputs(group = "headerStyle") {
-        const inputs = document.querySelectorAll(`[data-style-group='${group}Cell']`);
-        inputs.forEach(input => {
-            input.addEventListener("input", (e) => {
-                const attr = e.target.dataset.styleAttr;
-                const value = e.target.value;
-                const selected = document.querySelector("td.selected-td");
-                if (!selected) return;
-
-                const rowIndex = selected.parentElement.rowIndex;
-                const cellIndex = selected.cellIndex;
-
-                const cell = styleGroups?.[group]?.rows?.[rowIndex]?.[cellIndex];
-                if (!cell) return;
-
-                if (!cell.styles) cell.styles = {};
-
-                const pxProps = ["font-size", "padding", "border-width", "width", "height"];
-                const styleValue = pxProps.includes(attr) && !value.includes("px") ? `${value}px` : value;
-
-                cell.styles[attr] = styleValue;
-
-                previewManager.updateSingleCellStyle(rowIndex, cellIndex, group);
-            });
-        });
-    }
-
-
     // ✅ Fungsi ini bisa kamu panggil untuk keperluan seperti generatePreview()
     PDFDesigner.getSelectorValues = () => manager.getAllValuesAsObject();
 
-    updateSelectorTable();
-    updateHTMLPreview();
+    utilityManager.updateSelectorTable(manager);
+    utilityManager.updateHTMLPreview(manager);
 
     PDFDesigner.selectorManager = manager;
 
@@ -821,8 +503,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const metaTitle = getValue(selectorVars.metaTitle);
         const metaAuthor = getValue(selectorVars.metaAuthor);
         const metaSubject = getValue(selectorVars.metaSubject);
-        const updatedHeaderStyle = buildStyleStructureFromDOM("table_header_style");
-        const updatedFooterStyle = buildStyleStructureFromDOM("table_footer_style");
+        const updatedHeaderStyle = utilityManager.buildStyleStructureFromDOM("table_header_style");
+        const updatedFooterStyle = utilityManager.buildStyleStructureFromDOM("table_footer_style");
 
         // Ambil header hasil edit yang dinamakan "header_<field>"
         const customHeaders = {};
@@ -864,53 +546,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return params;
     }
 
-    function enableHeaderFooterRulesControls(styleGroups) {
-        if (headerRuleDisplaySelect) {
-            headerRuleDisplaySelect.addEventListener("change", (e) => {
-                styleGroups.headerDisplayRule = e.target.value;
-                console.log("Header display rule:", styleGroups.headerDisplayRule);
-                // Refresh preview untuk menampilkan perubahan
-                if (cachedData.length > 0) {
-                    renderPreview(cachedData);
-                }
-            });
-        }
-
-        if (footerRuleDisplaySelect) {
-            footerRuleDisplaySelect.addEventListener("change", (e) => {
-                styleGroups.footerDisplayRule = e.target.value;
-                console.log("Footer display rule:", styleGroups.footerDisplayRule);
-                // Refresh preview untuk menampilkan perubahan
-                if (cachedData.length > 0) {
-                    renderPreview(cachedData);
-                }
-            });
-        }
-
-        if (pageNumberPositionSelect) {
-            pageNumberPositionSelect.addEventListener("change", (e) => {
-                styleGroups.pageNumberPosition = e.target.value;
-                console.log("Page number position:", styleGroups.pageNumberPosition);
-            });
-        }
-
-        // Set nilai default jika belum ada
-        if (!styleGroups.headerDisplayRule) {
-            styleGroups.headerDisplayRule = "every-page";
-            if (headerRuleDisplaySelect) headerRuleDisplaySelect.value = "every-page";
-        }
-        if (!styleGroups.footerDisplayRule) {
-            styleGroups.footerDisplayRule = "every-page";
-            if (footerRuleDisplaySelect) footerRuleDisplaySelect.value = "every-page";
-        }
-        if (!styleGroups.pageNumberPosition) {
-            styleGroups.pageNumberPosition = "none";
-            if (pageNumberPositionSelect) pageNumberPositionSelect.value = "none";
-        }
-    }
-
     templateManager.fetchTemplateList();
-
 
     async function generatePreview() {
         const params = buildPDFParams();
@@ -930,71 +566,11 @@ document.addEventListener("DOMContentLoaded", () => {
         renderPreview(cachedData);
     }
 
-    selectorVars.paperSize.addEventListener("change", () => previewManager.toggleCustomInputs());
     previewManager.toggleCustomInputs();
-    selectorVars.paperSize.addEventListener("change", () => previewManager.setPreviewSize(preview, selectorVars));
-    selectorVars.paperOrientation.addEventListener("change", () => previewManager.setPreviewSize(preview, selectorVars));
-    document.querySelectorAll('[data-style-group]').forEach(input => {
-        input.addEventListener('input', handleInputChange);
-        input.addEventListener('change', handleInputChange);
-    });
 
-    function handleInputChange() {
-        // Coba cari di header dulu, jika tidak ada baru ke footer
-        let selected = document.querySelector("#table_header_style td.selected-td");
-        let section = "header"; // default
-        if (!selected) {
-            selected = document.querySelector("#table_footer_style td.selected-td");
-            if (selected) section = "footer";
-        }
-
-        let rowIndex = -1;
-        let cellIndex = -1;
-
-        if (selected) {
-            rowIndex = selected.parentElement.rowIndex;
-            cellIndex = selected.cellIndex;
-        }
-
-        updateStyleGroupsFromInputs();
-        renderPreview(cachedData);
-
-        // Coba kembalikan class selected-td
-        if (rowIndex !== -1 && cellIndex !== -1) {
-            const selector =
-                section === "header"
-                    ? `#table_header_style tr:nth-child(${rowIndex + 1}) td:nth-child(${cellIndex + 1})`
-                    : `#table_footer_style tr:nth-child(${rowIndex + 1}) td:nth-child(${cellIndex + 1})`;
-
-            const restoredCell = document.querySelector(selector);
-            if (restoredCell) {
-                restoredCell.classList.add("selected-td", "outline-dashed", "outline-2", "outline-blue-500", "bg-blue-100");
-            }
-
-            // Panggil ulang update tampilan cell individual jika perlu
-            if (section === "header") {
-                previewManager.updateSingleCellStyle(rowIndex, cellIndex);
-            } else {
-                previewManager.updateSingleCellStyle(rowIndex, cellIndex);
-            }
-        }
-
-        initStyleCellInputs(section); // pastikan fungsi ini menangani 'header' atau 'footer'
-    }
-
-    updateStyleGroupsFromInputs();
+    utilityManager.updateStyleGroupsFromInputs(styleGroups);
     generatePreview();
-
-    document.addEventListener("click", function (e) {
-        // Hapus semua popover jika klik bukan pada tombol tambah atau popover itu sendiri
-        const allPopovers = document.querySelectorAll(".add-popover");
-        const isAddButton = e.target.closest(".cell-control-add");
-        const isInsidePopover = e.target.closest(".add-popover");
-
-        if (!isAddButton && !isInsidePopover) {
-            allPopovers.forEach(p => p.remove());
-        }
-    });
+    utilityManager.enableHeaderFooterRulesControls(styleGroups, cachedData, renderPreview);
 
     downloadButton.addEventListener('click', async () => {
         const selectedOption = await dialogManager.showDownloadOptions();
@@ -1040,7 +616,4 @@ document.addEventListener("DOMContentLoaded", () => {
             );
         }
     });
-
-    enableHeaderFooterRulesControls(styleGroups);
-
 });
