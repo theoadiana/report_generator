@@ -24,11 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const editTemplateButton = document.getElementById("report_generator_editTemplatePDF");
     const templateSelector = document.getElementById('report_generator_templateSelector');
     const queryExecuteButton = document.getElementById("report_generator_queryExecute");
-    const headerRuleDisplaySelect = document.getElementById("headerDisplayRule");
-    const footerRuleDisplaySelect = document.getElementById("footerDisplayRule");
-    const pageNumberPositionSelect = document.getElementById("pageNumberPosition");
     const preview = document.getElementById("preview");
-    const footer = document.getElementById("previewFooter");
 
     let cachedData = [];
     previewManager.toggleStyleInputs('headerStyleCell', false);
@@ -77,16 +73,21 @@ document.addEventListener("DOMContentLoaded", () => {
     eventManager.setupCellSelectionListeners();
     eventManager.setupStyleInputListeners();
     eventManager.setupPopoverCleanup();
+    eventManager.setupHeaderFooterDisplayListeners(styleGroups, () => {
+        if (cachedData && cachedData.length > 0) {
+            renderPreview(cachedData);
+        }
+    });
 
     queryExecuteButton.addEventListener('click', () => {
         const query = document.getElementById('manualQueryInput').value;
 
         if (query.trim() === '') {
-            alert('Query tidak boleh kosong.');
+            alert('Query cannot be empty.');
             return;
         }
 
-        // console.log('Data yang dikirim ke backend:', { query: query });
+        console.log('Data sent to the backend:', { query: query });
 
         fetch('public/download.php', {
             method: 'POST',
@@ -109,7 +110,7 @@ document.addEventListener("DOMContentLoaded", () => {
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Terjadi kesalahan saat mengirim query: ' + error.message);
+                alert('An error occurred while sending the query: ' + error.message);
             });
     });
 
@@ -176,7 +177,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function renderPreview(data) {
         if (!data || data.length === 0) {
-            preview.innerHTML = '<p class="text-red-600">Tidak ada data dari database.</p>';
+            preview.innerHTML = '<p class="text-red-600">No data from the database.</p>';
             return;
         }
 
@@ -475,13 +476,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (newId && !manager.selectors[newId]) {
             manager.register(newId);
-            alert(`Selector dengan ID "${newId}" berhasil ditambahkan!`);
+            alert(`Selector with ID "${newId}" has been successfully added!`);
             utilityManager.updateSelectorTable(manager);
             utilityManager.updateHTMLPreview(manager);
         } else if (manager.selectors[newId]) {
-            alert(`Gagal menambahkan. ID "${newId}" sudah terdaftar.`);
+            alert(`Failed to add. ID "${newId}" is already registered.`);
         } else {
-            alert("ID selector tidak boleh kosong.");
+            alert("The ID selector cannot be empty.");
         }
 
         document.getElementById("newSelectorId").value = "";
@@ -556,7 +557,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const result = await response.json();
 
         if (!result.success || result.data.length === 0) {
-            preview.innerHTML = '<p class="text-red-600">Tidak ada data dari database.</p>';
+            preview.innerHTML = '<p class="text-red-600">No data from the database..</p>';
             return;
         }
 

@@ -1,5 +1,5 @@
 <?php
-session_start(); // HARUS DI BARIS PALING ATAS
+session_start();
 
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../src/DatabaseConnection.php';
@@ -167,8 +167,6 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_template_list') {
     header('Content-Type: application/json');
     $templateDir = __DIR__ . '/../template_report_generator_pdf';
     $files = array_diff(scandir($templateDir), ['.', '..']);
-    echo2file($templateDir);
-    echo2file($files);
     $templates = array_values(array_filter($files, fn($file) => pathinfo($file, PATHINFO_EXTENSION) === 'json'));
     echo json_encode($templates);
     exit;

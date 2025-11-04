@@ -6,32 +6,104 @@ export class PreviewManager {
         this.cachedData = [];
     }
 
-    setPreviewSize(previewElement, selectorVars) {
-        const paperSize = selectorVars.paperSize.value;
-        const paperOrientation = selectorVars.paperOrientation.value;
+    setPreviewSize(preview, selectorVars) {
+        console.log("📐 Setting preview size...");
 
-        let width = 210, height = 297; // default A4
-
-        switch (paperSize) {
-            case "A4": width = 210; height = 297; break;
-            case "A5": width = 148; height = 210; break;
-            case "Letter": width = 216; height = 279; break;
-            case "custom":
-                width = parseFloat(selectorVars.customWidth.value) || 210;
-                height = parseFloat(selectorVars.customHeight.value) || 297;
-                break;
+        if (!preview || !selectorVars) {
+            console.error("❌ Preview or selectorVars is missing");
+            return;
         }
 
-        if (paperOrientation === "landscape") {
-            [width, height] = [height, width];
+        const paperSize = selectorVars.paperSize?.value;
+        const paperOrientation = selectorVars.paperOrientation?.value;
+
+        console.log("Paper settings:", { paperSize, paperOrientation });
+
+        // Handle custom paper size (array)
+        let width, height;
+
+        if (paperSize === 'custom') {
+            // Ambil nilai custom width dan height
+            const customWidth = selectorVars.customWidth?.value;
+            const customHeight = selectorVars.customHeight?.value;
+
+            console.log("Custom size inputs:", { customWidth, customHeight });
+
+            // Parse custom size - bisa berupa string angka atau array
+            if (Array.isArray(customWidth)) {
+                width = customWidth[0] || 210; // Default A4 width
+            } else {
+                width = this.parseSizeToNumber(customWidth) || 210;
+            }
+
+            if (Array.isArray(customHeight)) {
+                height = customHeight[0] || 297; // Default A4 height
+            } else {
+                height = this.parseSizeToNumber(customHeight) || 297;
+            }
+
+            console.log("Parsed custom size:", { width, height });
+        } else {
+            // Standard paper sizes
+            const sizes = this.getPaperSizeInMm(paperSize, paperOrientation);
+            width = sizes.width;
+            height = sizes.height;
+
+            console.log("Standard paper size:", { width, height });
         }
 
-        previewElement.style.position = "relative";
-        previewElement.style.overflow = "hidden";
-        previewElement.style.width = `${width}mm`;
-        previewElement.style.height = `${height}mm`;
-        previewElement.style.border = "1px solid #ccc";
-        previewElement.style.backgroundColor = this.styleManager.getStyleGroups().bodyStyle["background-color"];
+        // Apply to preview
+        preview.style.width = `${width}mm`;
+        preview.style.height = `${height}mm`;
+
+        console.log("✅ Preview size set to:", {
+            width: preview.style.width,
+            height: preview.style.height
+        });
+    }
+
+    // Tambahkan helper method untuk parse size
+    parseSizeToNumber(sizeValue) {
+        if (!sizeValue) return null;
+
+        // Jika array, ambil elemen pertama
+        if (Array.isArray(sizeValue)) {
+            return parseFloat(sizeValue[0]) || null;
+        }
+
+        // Jika string, parse angka saja (hilangkan unit)
+        if (typeof sizeValue === 'string') {
+            // Hapus unit (mm, cm, px, dll) dan parse float
+            const numericValue = parseFloat(sizeValue.replace(/[^\d.-]/g, ''));
+            return isNaN(numericValue) ? null : numericValue;
+        }
+
+        // Jika sudah number, return langsung
+        if (typeof sizeValue === 'number') {
+            return sizeValue;
+        }
+
+        return null;
+    }
+
+    // Pastikan method getPaperSizeInMm sudah ada
+    getPaperSizeInMm(paperSize, orientation = 'portrait') {
+        const sizes = {
+            'A4': { width: 210, height: 297 },
+            'A3': { width: 297, height: 420 },
+            'A5': { width: 148, height: 210 },
+            'A6': { width: 105, height: 148 },
+            'Letter': { width: 216, height: 279 },
+            'Legal': { width: 216, height: 356 }
+        };
+
+        let size = sizes[paperSize] || sizes['A4'];
+
+        if (orientation === 'landscape') {
+            size = { width: size.height, height: size.width };
+        }
+
+        return size;
     }
 
     toggleCustomInputs() {
@@ -62,9 +134,9 @@ export class PreviewManager {
     parseLengthToMm(val, fallbackMm = 20) {
         if (!val && val !== 0) return fallbackMm;
         val = String(val).trim().toLowerCase();
-        
+
         const pxPerMm = 3.78;
-        
+
         if (val.endsWith("mm")) {
             return parseFloat(val) || fallbackMm;
         } else if (val.endsWith("cm")) {
@@ -93,7 +165,7 @@ export class PreviewManager {
     // Helper function untuk replace placeholders
     replacePlaceholders(str) {
         if (!str || typeof str !== "string") return str;
-        
+
         const currentDate = new Date().toISOString().split("T")[0];
         const placeholderValues = {
             "{{current_date}}": currentDate,

@@ -260,6 +260,13 @@ class PDFReportDesigner
             ?? '20mm';
     }
 
+    public function getBackgroundColor() : string 
+    {
+        $bodyStyleArray = $this->parseStyleStringToArray($this->bodyStyle);
+
+        return $bodyStyleArray['background-color'] ?? '#ffffff';
+    }
+
     private function styleArrayToString(array $styleArray): string
     {
         $styleString = '';
@@ -295,92 +302,48 @@ class PDFReportDesigner
         $marginLeft = $bodyStyleArray['margin-left'] ?? ($bodyStyleArray['margin'] ?? '20mm');
 
         $html = '<html><head>
-        <meta name="title" content="' . htmlspecialchars($this->metaTitle) . '">
-        <meta name="author" content="' . htmlspecialchars($this->metaAuthor) . '">
-        <meta name="subject" content="' . htmlspecialchars($this->metaSubject) . '">
-        <style>
-            body {
-                font-family: sans-serif;
-                font-size: 12pt;
-            }
-            @page {
-                margin-top: ' . $marginTop . ';
-                margin-right: ' . $marginRight . ';
-                margin-bottom: ' . $marginBottom . ';
-                margin-left: ' . $marginLeft . ';
-            }
-            table {
-                width: 100%;
-                border-collapse: collapse;
-                table-layout: fixed;
-                word-wrap: break-word;
-            }
-            th, td {
-                max-width: 100%;
-                border: 1px solid #000;
-                overflow: hidden;
-            }
-            .pdf-header {
-                left: 0;
-                right: 0;
-                margin-left: ' . $marginLeft . ';
-                margin-right: ' . $marginRight . ';
-            }
-            .pdf-footer {
-                left: 0;
-                right: 0;
-                margin-left: ' . $marginLeft . ';
-                margin-right: ' . $marginRight . ';
-                margin-bottom: ' . $marginBottom . ';
-            }
-            .fixed-top { position: fixed; top: 0; }
-            .fixed-bottom { position: fixed; bottom: 0; }
-        </style>
-    </head><body>';
-
-        // ================= HEADER SECTION =================
-        // if (!empty($this->headerStyle['rows']) && is_array($this->headerStyle['rows']) && $this->headerDisplayRule !== 'none') {
-        //     $maxCols = 0;
-        //     foreach ($this->headerStyle['rows'] as $row) {
-        //         $colCount = 0;
-        //         foreach ($row as $cell) {
-        //             $colCount += isset($cell['colspan']) ? (int) $cell['colspan'] : 1;
-        //         }
-        //         if ($colCount > $maxCols) {
-        //             $maxCols = $colCount;
-        //         }
-        //     }
-
-        //     // Tambahkan margin-bottom agar tabel data tidak tertutup header
-        //     $headerHtml = '<table style="width:100%; border-collapse: collapse; margin-bottom:10px;">';
-        //     foreach ($this->headerStyle['rows'] as $row) {
-        //         $headerHtml .= '<tr>';
-        //         foreach ($row as $cell) {
-        //             $tag = $cell['tag'] ?? 'div';
-        //             $content = $this->replacePlaceholders($cell['content'] ?? '');
-        //             $colspanVal = $cell['colspan'] ?? 1;
-        //             $rowspanVal = $cell['rowspan'] ?? 1;
-        //             $colspan = $colspanVal > 1 ? 'colspan="' . $colspanVal . '"' : '';
-        //             $rowspan = $rowspanVal > 1 ? 'rowspan="' . $rowspanVal . '"' : '';
-
-        //             $styles = $cell['styles'] ?? [];
-        //             unset($styles['width'], $styles['height']);
-        //             $styleStr = $this->styleArrayToString($styles);
-
-        //             $widthPercent = round(($colspanVal / $maxCols) * 100, 2);
-        //             $width = "width: {$widthPercent}%;";
-        //             $height = isset($cell['height']) ? 'height: ' . $cell['height'] . ';' : '';
-        //             $combinedStyles = $width . $height . $styleStr;
-
-        //             $headerHtml .= "<td $colspan $rowspan style='$combinedStyles'><$tag>" . htmlspecialchars($content) . "</$tag></td>";
-        //         }
-        //         $headerHtml .= '</tr>';
-        //     }
-        //     $headerHtml .= '</table>';
-
-        //     $html .= $headerHtml;
-        // }
-
+                    <meta name="title" content="' . htmlspecialchars($this->metaTitle) . '">
+                    <meta name="author" content="' . htmlspecialchars($this->metaAuthor) . '">
+                    <meta name="subject" content="' . htmlspecialchars($this->metaSubject) . '">
+                    <style>
+                        body {
+                            font-family: sans-serif;
+                            font-size: 12pt;
+                        }
+                        @page {
+                            margin-top: ' . $marginTop . ';
+                            margin-right: ' . $marginRight . ';
+                            margin-bottom: ' . $marginBottom . ';
+                            margin-left: ' . $marginLeft . ';
+                        }
+                        table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            table-layout: fixed;
+                            word-wrap: break-word;
+                        }
+                        th, td {
+                            max-width: 100%;
+                            border: 1px solid #000;
+                            overflow: hidden;
+                        }
+                        .pdf-header {
+                            left: 0;
+                            right: 0;
+                            margin-left: ' . $marginLeft . ';
+                            margin-right: ' . $marginRight . ';
+                        }
+                        .pdf-footer {
+                            left: 0;
+                            right: 0;
+                            margin-left: ' . $marginLeft . ';
+                            margin-right: ' . $marginRight . ';
+                            margin-bottom: ' . $marginBottom . ';
+                        }
+                        .fixed-top { position: fixed; top: 0; }
+                        .fixed-bottom { position: fixed; bottom: 0; }
+                    </style>
+                </head><body>';
 
         // ================= DATA TABLE SECTION =================
         $html .= '<table style="' . $this->tableStyle . '">';
@@ -412,46 +375,7 @@ class PDFReportDesigner
 
         $html .= '</table>';
 
-        // ================= FOOTER SECTION =================
-        // if (!empty($this->footerStyle['rows']) && is_array($this->footerStyle['rows']) && $this->footerDisplayRule !== 'none') {
-        //     $footerClass = "pdf-footer fixed-bottom";
-
-        //     $html .= '<div class="' . $footerClass . '"><table>';
-
-        //     foreach ($this->footerStyle['rows'] as $row) {
-        //         $html .= '<tr>';
-        //         foreach ($row as $cell) {
-        //             $tag = $cell['tag'] ?? 'div';
-        //             $content = $this->replacePlaceholders($cell['content'] ?? '');
-        //             $colspanVal = $cell['colspan'] ?? 1;
-        //             $rowspanVal = $cell['rowspan'] ?? 1;
-        //             $colspan = $colspanVal > 1 ? 'colspan="' . $colspanVal . '"' : '';
-        //             $rowspan = $rowspanVal > 1 ? 'rowspan="' . $rowspanVal . '"' : '';
-
-        //             $styles = $cell['styles'] ?? [];
-        //             unset($styles['width'], $styles['height']);
-        //             $styleStr = $this->styleArrayToString($styles);
-
-        //             if (isset($cell['width'])) {
-        //                 $width = 'width: ' . $cell['width'] . ';';
-        //             } else {
-        //                 $widthPercent = round(($colspanVal / $maxCols) * 100, 2);
-        //                 $width = "width: {$widthPercent}%;";
-        //             }
-
-        //             $height = isset($cell['height']) ? 'height: ' . $cell['height'] . ';' : '';
-        //             $combinedStyles = $width . $height . $styleStr;
-
-        //             $html .= "<td $colspan $rowspan style='$combinedStyles'><$tag>" . htmlspecialchars($content) . "</$tag></td>";
-        //         }
-        //         $html .= '</tr>';
-        //     }
-
-        //     $html .= '</table></div>';
-        // }
-
         $html .= '</body></html>';
-        // echo2file($html);
         return $html;
     }
 
@@ -623,8 +547,6 @@ class PDFReportDesigner
         }
         return $styleArray;
     }
-
-
 
     public function echo2file_arr($handle, $arr, $space)
     {

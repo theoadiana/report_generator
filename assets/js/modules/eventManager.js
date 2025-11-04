@@ -7,7 +7,7 @@ export class EventManager {
         this.manager = manager;
         this.styleGroups = styleGroups;
         this.onInputChange = null;
-        
+
         console.log("🎯 EventManager initialized with:", {
             styleManager: !!styleManager,
             previewManager: !!previewManager,
@@ -16,7 +16,7 @@ export class EventManager {
             styleGroups: !!styleGroups
         });
     }
-    
+
     setupContentEditableListeners() {
         console.log("🔧 Setting up content editable listeners...");
         document.addEventListener("input", (e) => {
@@ -108,7 +108,7 @@ export class EventManager {
         console.log("🔧 Setting up style input listeners...");
         const styleInputs = document.querySelectorAll('[data-style-group]');
         console.log(`📋 Found ${styleInputs.length} style inputs`);
-        
+
         styleInputs.forEach(input => {
             input.addEventListener('input', (e) => {
                 console.log("🎛️ Style input changed:", e.target.dataset.styleGroup, e.target.dataset.styleAttr, e.target.value);
@@ -171,27 +171,94 @@ export class EventManager {
 
     setupPaperSizeListeners(selectorVars, preview) {
         console.log("🔧 Setting up paper size listeners...");
-        
-        // Remove existing listeners if any
-        const newPaperSizeHandler = () => {
+
+        const paperSizeHandler = () => {
             console.log("📄 Paper size changed");
             this.previewManager.toggleCustomInputs();
             this.previewManager.setPreviewSize(preview, selectorVars);
         };
 
-        const newPaperOrientationHandler = () => {
+        const paperOrientationHandler = () => {
             console.log("🔄 Paper orientation changed");
             this.previewManager.setPreviewSize(preview, selectorVars);
         };
 
-        // Add new listeners
-        selectorVars.paperSize.addEventListener("change", newPaperSizeHandler);
-        selectorVars.paperOrientation.addEventListener("change", newPaperOrientationHandler);
-        
+        // Custom size input handlers
+        const customSizeHandler = () => {
+            console.log("📏 Custom size changed");
+            if (selectorVars.paperSize?.value === 'custom') {
+                this.previewManager.setPreviewSize(preview, selectorVars);
+            }
+        };
+
+        // Add listeners
+        selectorVars.paperSize.addEventListener("change", paperSizeHandler);
+        selectorVars.paperOrientation.addEventListener("change", paperOrientationHandler);
+
+        // Add listeners for custom inputs jika ada
+        if (selectorVars.customWidth) {
+            selectorVars.customWidth.addEventListener("input", customSizeHandler);
+            selectorVars.customWidth.addEventListener("change", customSizeHandler);
+        }
+
+        if (selectorVars.customHeight) {
+            selectorVars.customHeight.addEventListener("input", customSizeHandler);
+            selectorVars.customHeight.addEventListener("change", customSizeHandler);
+        }
+
         // Initial setup
         this.previewManager.toggleCustomInputs();
         this.previewManager.setPreviewSize(preview, selectorVars);
-        
+
         console.log("✅ Paper size listeners setup completed");
+    }
+    
+    setupHeaderFooterDisplayListeners(styleGroups, renderPreviewCallback) {
+        console.log("🔧 Setting up header/footer display listeners...");
+
+        const headerDisplayRuleSelect = document.getElementById('headerDisplayRule');
+        const footerDisplayRuleSelect = document.getElementById('footerDisplayRule');
+        const pageNumberPositionSelect = document.getElementById('pageNumberPosition');
+
+        // Inisialisasi nilai awal
+        if (headerDisplayRuleSelect && styleGroups.headerDisplayRule) {
+            headerDisplayRuleSelect.value = styleGroups.headerDisplayRule;
+        }
+        if (footerDisplayRuleSelect && styleGroups.footerDisplayRule) {
+            footerDisplayRuleSelect.value = styleGroups.footerDisplayRule;
+        }
+        if (pageNumberPositionSelect && styleGroups.pageNumberPosition) {
+            pageNumberPositionSelect.value = styleGroups.pageNumberPosition;
+        }
+
+        // Event listeners
+        if (headerDisplayRuleSelect) {
+            headerDisplayRuleSelect.addEventListener('change', (e) => {
+                styleGroups.headerDisplayRule = e.target.value;
+                console.log('Header display rule changed to:', e.target.value);
+                if (renderPreviewCallback) {
+                    renderPreviewCallback();
+                }
+            });
+        }
+
+        if (footerDisplayRuleSelect) {
+            footerDisplayRuleSelect.addEventListener('change', (e) => {
+                styleGroups.footerDisplayRule = e.target.value;
+                console.log('Footer display rule changed to:', e.target.value);
+                if (renderPreviewCallback) {
+                    renderPreviewCallback();
+                }
+            });
+        }
+
+        if (pageNumberPositionSelect) {
+            pageNumberPositionSelect.addEventListener('change', (e) => {
+                styleGroups.pageNumberPosition = e.target.value;
+                console.log('Page number position changed to:', e.target.value);
+            });
+        }
+
+        console.log("✅ Header/footer display listeners setup completed");
     }
 }
