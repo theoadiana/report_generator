@@ -294,7 +294,7 @@ class PDFReportDesigner
         }
 
         $bodyStyleArray = $this->parseStyleStringToArray($this->bodyStyle);
-
+        $backgroundColor = $this->getBackgroundColor();
         // Ambil margin dengan unit default mm (lebih akurat untuk PDF)
         $marginTop = $bodyStyleArray['margin-top'] ?? ($bodyStyleArray['margin'] ?? '20mm');
         $marginRight = $bodyStyleArray['margin-right'] ?? ($bodyStyleArray['margin'] ?? '20mm');
@@ -311,10 +311,12 @@ class PDFReportDesigner
                             font-size: 12pt;
                         }
                         @page {
+                            background-color: ' . $backgroundColor . ';
                             margin-top: ' . $marginTop . ';
                             margin-right: ' . $marginRight . ';
                             margin-bottom: ' . $marginBottom . ';
                             margin-left: ' . $marginLeft . ';
+                            background-image: paint(background);
                         }
                         table {
                             width: 100%;
