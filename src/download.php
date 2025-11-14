@@ -2,20 +2,15 @@
 session_start();
 
 require_once __DIR__ . '/../vendor/autoload.php';
-require_once __DIR__ . '/../src/DatabaseConnection.php';
-require_once __DIR__ . '/../src/ExportHandler.php';
-require_once __DIR__ . '/../src/ExportHandlerCSV.php';
-require_once __DIR__ . '/../src/ExportHandlerPDF.php';
-require_once __DIR__ . '/../src/ExportHandlerExcel.php';
-require_once __DIR__ . '/../src/ReportGenerator.php';
-require_once __DIR__ . '/../src/PDFReportDesigner.php';
-require_once __DIR__ . '/../src/Utility.php';
-
-// Konfigurasi database
-$host = 'localhost';
-$dbname = 'stok_gudang_djohartex';
-$username = 'root';
-$password = '';
+require_once __DIR__ . '/DatabaseConnection.php';
+require_once __DIR__ . '/ExportHandler.php';
+require_once __DIR__ . '/ExportHandlerCSV.php';
+require_once __DIR__ . '/ExportHandlerPDF.php';
+require_once __DIR__ . '/ExportHandlerExcel.php';
+require_once __DIR__ . '/ReportGenerator.php';
+require_once __DIR__ . '/PDFReportDesigner.php';
+require_once __DIR__ . '/Utility.php';
+require_once __DIR__ . '/../public/config.php';
 
 // Buat instance ReportGenerator
 $reportGenerator = new ReportGenerator($dbname, $username, $password, $host);

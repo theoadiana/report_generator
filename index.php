@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/public/download.php';
+require_once __DIR__ . '/src/download.php';
 ?>
 
 <!DOCTYPE html>

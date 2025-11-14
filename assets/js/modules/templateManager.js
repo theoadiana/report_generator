@@ -9,7 +9,7 @@ export class TemplateManager {
 
     async fetchTemplateList() {
         try {
-            const response = await fetch('/public/download.php?action=get_template_list');
+            const response = await fetch('/src/download.php?action=get_template_list');
             if (!response.ok) throw new Error('Failed to retrieve template list');
             
             const templates = await response.json();
@@ -65,7 +65,7 @@ export class TemplateManager {
             const params = buildPDFParams({ action: 'save_template_PDF' });
             params.append('filename', finalFilename);
 
-            const url = `/public/download.php?${params.toString()}`;
+            const url = `/src/download.php?${params.toString()}`;
             const response = await fetch(url);
             
             if (!response.ok) throw new Error('Failed to save template');
@@ -120,7 +120,7 @@ export class TemplateManager {
             const params = buildPDFParams({ action: 'save_template_PDF' });
             params.append('filename', filename);
 
-            const url = `/public/download.php?${params.toString()}`;
+            const url = `/src/download.php?${params.toString()}`;
             const response = await fetch(url);
             
             if (!response.ok) throw new Error('Failed to save template');
@@ -147,7 +147,7 @@ export class TemplateManager {
 
     async loadTemplate(filename, PDFDesigner, updateFormInputsFromTemplate, setPreviewSize, generatePreview) {
         try {
-            const response = await fetch(`/public/download.php?action=load_template&filename=${encodeURIComponent(filename)}`);
+            const response = await fetch(`/src/download.php?action=load_template&filename=${encodeURIComponent(filename)}`);
             if (!response.ok) throw new Error('Failed to load template');
 
             const template = await response.json();
@@ -260,7 +260,7 @@ export class TemplateManager {
                 return;
             }
 
-            const response = await fetch('/public/download.php?action=edit_template', {
+            const response = await fetch('/src/download.php?action=edit_template', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -313,7 +313,7 @@ export class TemplateManager {
 
             if (!confirmDelete) return;
 
-            const response = await fetch(`/public/download.php?action=delete_template&filename=${encodeURIComponent(selectedValue)}`);
+            const response = await fetch(`/src/download.php?action=delete_template&filename=${encodeURIComponent(selectedValue)}`);
             const result = await response.json();
 
             if (result.success) {
