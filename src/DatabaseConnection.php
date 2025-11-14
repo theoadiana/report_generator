@@ -1,4 +1,7 @@
 <?php
+namespace Theob\ReportGenerator;
+use PDO, PDOException;
+
 class DatabaseConnection {
     private string $host;
     private string $dbname;

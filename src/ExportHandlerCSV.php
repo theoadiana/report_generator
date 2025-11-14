@@ -1,5 +1,5 @@
 <?php
-
+namespace Theob\ReportGenerator;
 class ExportHandlerCSV extends ExportHandler {
     public function export(string $filename = 'export.csv'): void
     {

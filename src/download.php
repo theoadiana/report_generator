@@ -1,4 +1,6 @@
 <?php
+namespace Theob\ReportGenerator;
+use Exception;
 session_start();
 
 require_once __DIR__ . '/../vendor/autoload.php';
@@ -10,7 +12,7 @@ require_once __DIR__ . '/ExportHandlerExcel.php';
 require_once __DIR__ . '/ReportGenerator.php';
 require_once __DIR__ . '/PDFReportDesigner.php';
 require_once __DIR__ . '/Utility.php';
-require_once __DIR__ . '/../public/config.php';
+require_once __DIR__ . '/../reportGenerator.config.php';
 
 // Buat instance ReportGenerator
 $reportGenerator = new ReportGenerator($dbname, $username, $password, $host);

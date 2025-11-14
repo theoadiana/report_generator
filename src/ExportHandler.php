@@ -1,5 +1,5 @@
 <?php
-
+namespace Theob\ReportGenerator;
 abstract class ExportHandler {
     protected array $data;
 

@@ -1,6 +1,6 @@
 <?php
-
-require_once 'ExportHandler.php';
+namespace Theob\ReportGenerator;
+// require_once 'ExportHandler.php';
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;

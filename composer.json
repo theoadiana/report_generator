@@ -1,14 +1,37 @@
 {
-    "name": "theob/test",
-    "description": "test",
+    "name": "theob/report-generator",
+    "description": "A PHP library for generating reports in Excel, PDF, and HTML formats",
     "type": "library",
+    "license": "MIT",
+    "keywords": ["report", "excel", "pdf", "export", "phpspreadsheet", "dompdf"],
     "autoload": {
         "psr-4": {
-            "Theob\\Test\\": "src/"
+            "Theob\\ReportGenerator\\": "src/"
         }
     },
+    "authors": [
+        {
+            "name": "Theo Adiana",
+            "email": "theobenitoadiana@gmail.com",
+            "homepage": "https://github.com/theoadiana",
+            "role": "Developer"
+        }
+    ],
     "require": {
+        "php": "^7.4|^8.0",
         "phpoffice/phpspreadsheet": "^4.1",
         "dompdf/dompdf": "^3.1"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.0"
+    },
+    "suggest": {
+        "ext-zip": "For Excel file operations",
+        "ext-gd": "For image processing in PDFs",
+        "ext-mbstring": "For better string handling"
+    },
+    "config": {
+        "sort-packages": true,
+        "optimize-autoloader": true
     }
 }

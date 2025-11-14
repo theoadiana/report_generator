@@ -1,5 +1,5 @@
 <?php
-
+namespace Theob\ReportGenerator;
 class PDFReportDesigner
 {
     private string $headerTableStyle = 'font-size: 14px; font-weight: bold; color: #000000; text-align: center; background-color: #ffffff; border: 1px solid #000000; padding: 8px;';
