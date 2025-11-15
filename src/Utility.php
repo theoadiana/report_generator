@@ -1,11 +1,6 @@
 <?php
 namespace Theob\ReportGenerator;
 
-spl_autoload_register(function ($class) {
-    $class = explode('\\', $class);
-    $class = end($class);
-    require_once __DIR__ . '\\'.$class . '.php';
-});
 function saveHTMLTemplate_arr($handle, $arr, $space)
 {
     $space += 2;

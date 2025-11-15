@@ -9,7 +9,8 @@
             "Theob\\ReportGenerator\\": "src/"
         },
         "files": [
-            "config/report-generator.config.php"
+            "src/Utility.php",
+            "reportGenerator.config.php"
         ]
     },
     "authors": [
@@ -20,6 +21,14 @@
             "role": "Developer"
         }
     ],
+    "scripts": {
+        "post-install-cmd": [
+            "php scripts/make-config.php"
+        ],
+        "post-update-cmd": [
+            "php scripts/make-config.php"
+        ]
+    },
     "require": {
         "php": "^7.4|^8.0",
         "phpoffice/phpspreadsheet": "^4.1",
