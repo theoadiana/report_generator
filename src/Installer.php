@@ -8,6 +8,7 @@ class Installer
      */
     public static function postInstall()
     {
+        self::debugPaths(); // DEBUG: Tambahkan ini untuk troubleshooting
         self::setupConfig();
         self::createDirectories();
         self::showWelcomeMessage();
@@ -30,10 +31,18 @@ class Installer
         $projectRoot = self::getProjectRoot();
         $configFile = $projectRoot . '/config/reportGenerator.config.php';
         
+        echo "🔍 Project Root: " . $projectRoot . "\n";
+        echo "📁 Config Path: " . $configFile . "\n";
+        
         // Create config directory if not exists
         $configDir = dirname($configFile);
         if (!is_dir($configDir)) {
-            mkdir($configDir, 0755, true);
+            if (mkdir($configDir, 0755, true)) {
+                echo "✅ Created config directory: " . $configDir . "\n";
+            } else {
+                echo "❌ Failed to create config directory: " . $configDir . "\n";
+                return;
+            }
         }
         
         // Only create config if it doesn't exist
@@ -42,10 +51,10 @@ class Installer
             if (file_put_contents($configFile, $configContent) !== false) {
                 echo "✅ Created config file: " . $configFile . "\n";
             } else {
-                echo "⚠️  Failed to create config file: " . $configFile . "\n";
+                echo "❌ Failed to create config file: " . $configFile . "\n";
             }
         } else {
-            echo "ℹ️  Config file already exists: " . $configFile . "\n";
+            echo "ℹ️ Config file already exists: " . $configFile . "\n";
         }
     }
 
@@ -74,34 +83,54 @@ class Installer
                         file_put_contents($fullPath . '/.gitignore', "*\n!.gitignore");
                     }
                 } else {
-                    echo "⚠️  Failed to create directory: " . $fullPath . "\n";
+                    echo "❌ Failed to create directory: " . $fullPath . "\n";
                 }
+            } else {
+                echo "ℹ️ Directory already exists: " . $fullPath . "\n";
             }
         }
     }
 
     /**
-     * Get the project root path (where user's composer.json is located)
+     * Get the project root path - METHOD YANG DIPERBAIKI
      */
     private static function getProjectRoot(): string
     {
-        // Method 1: Current working directory (usually the project root)
+        // Strategy 1: Dari vendor path (PALING RELIABLE)
+        // Dari: vendor/theob/report-generator/src/Installer.php
+        $vendorPath = dirname(__DIR__, 2); // vendor/theob/report-generator
+        $possibleRoot = dirname($vendorPath); // project-root
+        
+        if (file_exists($possibleRoot . '/composer.json') || 
+            file_exists($possibleRoot . '/vendor/autoload.php')) {
+            return realpath($possibleRoot);
+        }
+        
+        // Strategy 2: Current working directory
         $cwd = getcwd();
-        if (file_exists($cwd . '/composer.json')) {
+        if (file_exists($cwd . '/composer.json') || 
+            file_exists($cwd . '/vendor/autoload.php')) {
             return realpath($cwd);
         }
         
-        // Method 2: Go up from vendor directory
-        $vendorPath = dirname(__DIR__, 3);
-        if (file_exists($vendorPath . '/composer.json')) {
-            return realpath($vendorPath);
+        // Strategy 3: Naik terus sampai ketemu composer.json
+        $current = $cwd;
+        $previous = '';
+        while ($current !== $previous) {
+            if (file_exists($current . '/composer.json') || 
+                file_exists($current . '/vendor/autoload.php')) {
+                return realpath($current);
+            }
+            $previous = $current;
+            $current = dirname($current);
         }
         
-        return $cwd; // Fallback
+        echo "⚠️  Could not find project root, using fallback: " . $cwd . "\n";
+        return realpath($cwd); // Fallback
     }
 
     /**
-     * Configuration template
+     * Configuration template - DIPERBAIKI
      */
     private static function getConfigTemplate(): string
     {
@@ -146,9 +175,12 @@ EOT;
      */
     private static function showWelcomeMessage()
     {
+        $projectRoot = self::getProjectRoot();
+        
         echo "\n" . str_repeat("=", 60) . "\n";
         echo "🎉 REPORT GENERATOR INSTALLED SUCCESSFULLY!\n";
         echo str_repeat("=", 60) . "\n";
+        echo "Project Root: " . $projectRoot . "\n\n";
         echo "Next steps:\n\n";
         echo "1. Edit your database configuration:\n";
         echo "   📁 config/reportGenerator.config.php\n\n";
@@ -160,5 +192,40 @@ EOT;
         echo "3. Your export files will be saved in:\n";
         echo "   📁 exports/excel/, exports/pdf/, etc.\n";
         echo str_repeat("=", 60) . "\n\n";
+    }
+
+    /**
+     * DEBUG: Method untuk troubleshooting path
+     */
+    private static function debugPaths()
+    {
+        echo "\n🔍 DEBUG PATH INFORMATION:\n";
+        echo "Current File: " . __FILE__ . "\n";
+        echo "__DIR__: " . __DIR__ . "\n";
+        echo "dirname(__DIR__): " . dirname(__DIR__) . "\n";
+        echo "dirname(__DIR__, 2): " . dirname(__DIR__, 2) . "\n";
+        echo "dirname(__DIR__, 3): " . dirname(__DIR__, 3) . "\n";
+        echo "getcwd(): " . getcwd() . "\n";
+        
+        // Cek vendor path
+        $vendorPath = dirname(__DIR__, 2);
+        echo "Vendor Path: " . $vendorPath . "\n";
+        echo "Vendor exists: " . (is_dir($vendorPath) ? 'YES' : 'NO') . "\n";
+        
+        $projectRoot = dirname($vendorPath);
+        echo "Project Root (calculated): " . $projectRoot . "\n";
+        echo "Project Root exists: " . (is_dir($projectRoot) ? 'YES' : 'NO') . "\n";
+        
+        // Cek indicators
+        $indicators = [
+            $projectRoot . '/composer.json',
+            $projectRoot . '/vendor/autoload.php',
+            getcwd() . '/composer.json'
+        ];
+        
+        foreach ($indicators as $indicator) {
+            echo "Indicator {$indicator}: " . (file_exists($indicator) ? 'EXISTS' : 'NOT EXISTS') . "\n";
+        }
+        echo "---\n";
     }
 }
