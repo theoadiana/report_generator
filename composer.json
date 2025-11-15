@@ -9,8 +9,7 @@
             "Theob\\ReportGenerator\\": "src/"
         },
         "files": [
-            "src/Utility.php",
-            "reportGenerator.config.php"
+            "src/Utility.php"
         ]
     },
     "authors": [
@@ -23,10 +22,10 @@
     ],
     "scripts": {
         "post-install-cmd": [
-            "php scripts/make-config.php"
+            "Theob\\ReportGenerator\\Installer::postInstall"
         ],
         "post-update-cmd": [
-            "php scripts/make-config.php"
+            "Theob\\ReportGenerator\\Installer::postUpdate"
         ]
     },
     "require": {
