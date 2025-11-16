@@ -22,10 +22,12 @@
     ],
     "scripts": {
         "post-install-cmd": [
-            "php scripts/make-config.php"
+            "php scripts/make-config.php",
+            "php scripts/make-example.php"
         ],
         "post-update-cmd": [
-            "php scripts/make-config.php"
+            "php scripts/make-config.php",
+            "php scripts/make-example.php"
         ]
     },
     "require": {

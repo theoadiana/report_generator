@@ -1,5 +1,5 @@
 <?php
-$host = '<host>';
-$dbname = '<database name>';
-$username = '<username>';
-$password = '<password>';
+$host = 'localhost';
+$dbname = 'stok_gudang_djohartex';
+$username = 'root';
+$password = '';

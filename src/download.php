@@ -18,8 +18,8 @@ require_once __DIR__ . '/../reportGenerator.config.php';
 // ProjectRootFinder::debug();
 
 // Kemudian cari root
-$rootPath = ProjectRootFinder::find();
-echo "Project root: " . $rootPath . "\n";
+// $rootPath = ProjectRootFinder::find();
+// echo "Project root: " . $rootPath . "\n";
 // Buat instance ReportGenerator
 $reportGenerator = new ReportGenerator($dbname, $username, $password, $host);
 

@@ -1,3 +1,9 @@
+<?php
+require_once __DIR__ . '/../vendor/autoload.php';
+use Theob\ReportGenerator\ProjectRootFinder;
+$rootPath = ProjectRootFinder::find();
+$configPath = $rootPath . '\reportGenerator.example.php';
+$content = <<<'EOT'
 <!DOCTYPE html>
 <html lang="en">
 
@@ -518,3 +524,5 @@
 </body>
 
 </html>
+EOT;
+file_put_contents($configPath, $content);
