@@ -163,7 +163,6 @@ document.addEventListener("DOMContentLoaded", () => {
     (async () => {
         try {
             const data = await fetch("src/download.php?action=get_data").then(res => res.json());
-
             const columnCount = Object.keys(data[0]).length;
             const percentage = (100 / columnCount).toFixed(2) + "%";
 
