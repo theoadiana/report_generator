@@ -22,10 +22,10 @@
     ],
     "scripts": {
         "post-install-cmd": [
-            "Theob\\ReportGenerator\\Installer::postInstall"
+            "php scripts/make-config.php"
         ],
         "post-update-cmd": [
-            "Theob\\ReportGenerator\\Installer::postUpdate"
+            "php scripts/make-config.php"
         ]
     },
     "require": {
