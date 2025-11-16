@@ -14,8 +14,12 @@ require_once __DIR__ . '/../vendor/autoload.php';
 // require_once __DIR__ . '/Utility.php';
 require_once __DIR__ . '/../reportGenerator.config.php';
 
-// $rootPath = findProjectRoot();
-// echo "Project root: " . $rootPath . "\n";
+// Untuk debug, panggil ini dulu
+// ProjectRootFinder::debug();
+
+// Kemudian cari root
+$rootPath = ProjectRootFinder::find();
+echo "Project root: " . $rootPath . "\n";
 // Buat instance ReportGenerator
 $reportGenerator = new ReportGenerator($dbname, $username, $password, $host);
 
