@@ -29,14 +29,10 @@ class ExportHandlerPDF extends ExportHandler
 
         $dompdf = new Dompdf($options);
 
-        // Ambil HTML utama, header, dan footer
         $contentHtml = $this->designer->generateHTML($this->data);
         $headerHtml = $this->designer->getHeaderHTML();
         $footerHtml = $this->designer->getFooterHTML();
 
-        // ==============================
-        // Hitung tinggi headerStyle & footerStyle
-        // ==============================
         $convertValue = 1.41;
         $headerHeight = 0;
         $footerHeight = 0;
@@ -49,7 +45,6 @@ class ExportHandlerPDF extends ExportHandler
 
         if (!empty($headerStyle['rows']) && is_array($headerStyle['rows'])) {
             foreach ($headerStyle['rows'] as $row) {
-                // Ambil tinggi maksimum dari setiap baris
                 $rowHeights = array_map(fn($cell) => $cell['height'] ?? 0, $row);
                 $headerHeight += max($rowHeights);
             }
@@ -64,20 +59,15 @@ class ExportHandlerPDF extends ExportHandler
 
         $bottomSafeMargin = 10 * $convertValue;
 
-        // Tambahkan sedikit jarak ekstra (10px) agar tidak terlalu rapat
         $paddingTop = $headerHeight * $convertValue + $this->designer->getBodyMarginTop();
         $paddingBottom = max(
             $footerHeight * $convertValue + $this->designer->getBodyMarginBottom(),
             $footerHeight + $bottomSafeMargin
         );
 
-        // ==============================
-        // CSS Visibility Logic
-        // ==============================
         $headerVisibility = 'visible';
         $footerVisibility = 'visible';
 
-        // Header rules
         switch ($headerDisplayRule) {
             case 'none':
                 $headerVisibility = 'hidden';
@@ -85,11 +75,10 @@ class ExportHandlerPDF extends ExportHandler
             case 'every-page':
                 $footerVisibility = 'visible';
                 break;
-            default: // every-page
+            default:
                 $headerVisibility = 'visible';
         }
 
-        // Footer rules
         switch ($footerDisplayRule) {
             case 'none':
                 $footerVisibility = 'hidden';
@@ -101,9 +90,6 @@ class ExportHandlerPDF extends ExportHandler
                 $footerVisibility = 'visible';
         }
 
-        // ==============================
-        // Bangun HTML untuk Dompdf
-        // ==============================
         $fullHtml = "
         <html>
         <head>
@@ -145,22 +131,16 @@ class ExportHandlerPDF extends ExportHandler
             {$contentHtml}
         </body>
         </html>";
-        // echo2file($fullHtml);
 
-
-        // Muat dan render ke Dompdf
         $dompdf->loadHtml($fullHtml);
         $dompdf->setPaper($this->designer->getPaperSize(), $this->designer->getPaperOrientation());
         $dompdf->render();
 
-        // Tambahkan nomor halaman
         $canvas = $dompdf->getCanvas();
         $font = $dompdf->getFontMetrics()->get_font("helvetica", "normal");
 
-        // Ambil posisi dari PDFReportDesigner
         $pageNumberPosition = $this->designer->getPageNumberPosition();
 
-        // Hanya render nomor halaman jika bukan "none"
         if ($pageNumberPosition !== 'none') {
             $canvas->page_script(function ($pageNumber, $pageCount, $canvas, $fontMetrics) use ($font, $pageNumberPosition) {
                 $w = $canvas->get_width();
@@ -168,15 +148,12 @@ class ExportHandlerPDF extends ExportHandler
                 $text = "Page $pageNumber of $pageCount";
                 $fontSize = 10;
 
-                // Hitung lebar teks
                 $textWidth = $fontMetrics->getTextWidth($text, $font, $fontSize);
 
-                // Default posisi (bottom-right)
                 $x = $w - $textWidth - 40;
                 $y = $h - 40;
 
                 switch ($pageNumberPosition) {
-                    // --- TOP POSITIONS ---
                     case 'top-left':
                         $x = 40;
                         $y = 40;
@@ -192,7 +169,6 @@ class ExportHandlerPDF extends ExportHandler
                         $y = 40;
                         break;
 
-                    // --- BOTTOM POSITIONS ---
                     case 'bottom-left':
                         $x = 40;
                         $y = $h - 40;
@@ -213,8 +189,6 @@ class ExportHandlerPDF extends ExportHandler
             });
         }
 
-
-        // Metadata PDF
         $metadata = $this->designer->getMetadata();
         if (!empty($metadata['title']))
             $dompdf->addInfo('Title', $metadata['title']);
@@ -223,7 +197,6 @@ class ExportHandlerPDF extends ExportHandler
         if (!empty($metadata['subject']))
             $dompdf->addInfo('Subject', $metadata['subject']);
 
-        // Output ke browser
         header('Content-Type: application/pdf');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
         echo $dompdf->output();

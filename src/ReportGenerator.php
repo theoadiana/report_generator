@@ -13,13 +13,11 @@ class ReportGenerator extends DatabaseConnection
         $this->designer = $designer ?? new PDFReportDesigner();
     }
 
-    // ✅ Setter untuk query
     public function setQuery(string $query): void
     {
         $this->query = $query;
     }
 
-    // ✅ Getter untuk query
     public function getQuery(): string
     {
         return $this->query;

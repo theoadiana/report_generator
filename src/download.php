@@ -8,14 +8,14 @@ $rootPath = ProjectRootFinder::find();
 
 require_once $rootPath . '/reportGenerator.config.php';
 
-// Buat instance ReportGenerator
+// Create a ReportGenerator instance
 $reportGenerator = new ReportGenerator($dbname, $username, $password, $host);
 
-// ✅ Ambil query dari session jika ada
+// Retrieve query from session if available
 if (isset($_SESSION['report_query'])) {
     $reportGenerator->setQuery($_SESSION['report_query']);
     if ($reportGenerator->getDesignerPDF()) {
-        $reportGenerator->getDesignerPDF()->setQuery($_SESSION['report_query']); // ✅ Simpan ke designer
+        $reportGenerator->getDesignerPDF()->setQuery($_SESSION['report_query']);
     }
 }
 
@@ -34,7 +34,6 @@ if (isset($_GET['action']) && $_GET['action'] === 'edit_template') {
         exit;
     }
 
-    // pastikan ekstensi .json
     if (!str_ends_with($oldName, '.json')) $oldName .= '.json';
     if (!str_ends_with($newName, '.json')) $newName .= '.json';
 
@@ -46,7 +45,6 @@ if (isset($_GET['action']) && $_GET['action'] === 'edit_template') {
         exit;
     }
 
-    // jika file baru sudah ada, hapus dulu (overwrite)
     if (file_exists($newPath)) {
         echo json_encode(['success' => false, 'error' => 'Template sudah ada.']);
         exit;
@@ -60,7 +58,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'edit_template') {
     exit;
 }
 
-// ✅ Handle POST
+// Handle POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
 
@@ -74,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     try {
         $reportGenerator->setQuery($query);
-        $_SESSION['report_query'] = $query; // ✅ Simpan ke session
+        $_SESSION['report_query'] = $query;
 
         $data = $reportGenerator->getTableData();
         if (empty($data)) {
@@ -96,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-// ✅ GET tetap bisa akses query yang sudah disimpan
+// Handle get_data action
 if (isset($_GET['action']) && $_GET['action'] === 'get_data') {
     header('Content-Type: application/json');
     try {
@@ -107,7 +105,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_data') {
     exit;
 }
 
-// Proses Export File
+// File Export Process
 if (isset($_GET['type'])) {
     $type = $_GET['type'] ?? '';
     $filename = 'laporan_' . date('Y-m-d') . '.' . $type;
@@ -126,7 +124,7 @@ if (isset($_GET['type'])) {
         $reportGenerator->setDesignerPDF($designer);
     }
 
-    $reportGenerator->export(null, $type, $filename); // ✅ Query otomatis diambil dari object
+    $reportGenerator->export(null, $type, $filename);
 }
 
 // Handle request save template (GET)
@@ -136,10 +134,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'save_template_PDF') {
     $designer = buildDesignerFromRequest();
     $designer->setQuery($reportGenerator->getQuery());
 
-    // Ambil nama file dari request jika ada
     $filename = $_GET['filename'] ?? null;
 
-    // Simpan template
     $savedFilename = savePDFTemplate($designer->getTemplateAsArray(), $filename);
 
     echo json_encode([
@@ -151,7 +147,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'save_template_PDF') {
 }
 
 
-// Handle untuk mendapatkan daftar file template
+// Handle to get the list of template files
 if (isset($_GET['action']) && $_GET['action'] === 'get_template_list') {
     header('Content-Type: application/json');
     $templateDir = __DIR__ . '/../template_report_generator_pdf';
@@ -166,7 +162,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete_template' && isset($_G
     header('Content-Type: application/json');
 
     $templateDir = __DIR__ . '/../template_report_generator_pdf';
-    $filename = basename($_GET['filename']); // hindari path traversal
+    $filename = basename($_GET['filename']);
     $filePath = $templateDir . '/' . $filename;
 
     if (file_exists($filePath)) {
@@ -181,19 +177,17 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete_template' && isset($_G
     exit;
 }
 
-
-// Handle untuk load template spesifik
+// Handle to load a specific template
 if (isset($_GET['action']) && $_GET['action'] === 'load_template' && isset($_GET['filename'])) {
     header('Content-Type: application/json');
     $templateDir = __DIR__ . '/../template_report_generator_pdf';
-    $filename = basename($_GET['filename']); // Hindari path traversal
+    $filename = basename($_GET['filename']);
     $filePath = $templateDir . '/' . $filename;
 
     if (file_exists($filePath)) {
         $content = file_get_contents($filePath);
         $template = json_decode($content, true);
     
-        // ✅ Jika ada query di template, simpan ke session
         if (isset($template['query'])) {
             $_SESSION['report_query'] = $template['query'];
         }
@@ -206,7 +200,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'load_template' && isset($_GET
     
 }
 /**
- * Builder Designer dari parameter URL
+ * Builder Designer from URL parameters
  */
 function buildDesignerFromRequest(): PDFReportDesigner {
     function getStyleFromQuery(string $key, string $default): string {
@@ -275,23 +269,4 @@ function buildDesignerFromRequest(): PDFReportDesigner {
     return $designer;
 }
 
-function echo2file_arr($handle, $arr, $space) {
-    $space += 2;
-    fwrite($handle, "\n");
-    foreach ($arr as $key => $value) {
-        if (is_array($value)) {
-            fwrite($handle, $key . "=>");
-            echo2file_arr($handle, $value, $space);
-        } else {
-            fwrite($handle, str_repeat("", $space) . $key . "=>" . $value . "\n");
-        }
-    }
-}
-
-function echo2file($par) {
-    $handle = fopen("errorCheckPHP.txt", 'a');
-    if (is_array($par)) echo2file_arr($handle, $par, 0);
-    else fwrite($handle, $par . "\n");
-    fclose($handle);
-}
 ?>

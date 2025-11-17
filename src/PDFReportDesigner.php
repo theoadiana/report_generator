@@ -17,8 +17,6 @@ class PDFReportDesigner
     private string $headerDisplayRule = 'every-page';
     private string $footerDisplayRule = 'every-page';
     private string $pageNumberPosition = 'none';
-
-    // Metadata
     private string $metaTitle = '';
     private string $metaAuthor = '';
     private string $metaSubject = '';
@@ -74,12 +72,10 @@ class PDFReportDesigner
                         $cellStyles = [];
 
                         foreach ($cell['styles'] as $key => $value) {
-                            // Lewati properti yang tidak diinginkan
                             if (in_array($key, ['display'])) {
                                 continue;
                             }
 
-                            // Ubah border jadi 1px solid warna bodyStyle
                             if (in_array($key, ['border', 'border-top', 'border-right', 'border-bottom', 'border-left'])) {
                                 $cellStyles[$key] = 'none';
                             } else {
@@ -87,7 +83,6 @@ class PDFReportDesigner
                             }
                         }
 
-                        // Tambahkan vertical-align: top jika belum ada
                         if (!isset($cellStyles['vertical-align'])) {
                             $cellStyles['vertical-align'] = 'top';
                         }
@@ -111,12 +106,10 @@ class PDFReportDesigner
                         $cellStyles = [];
 
                         foreach ($cell['styles'] as $key => $value) {
-                            // Lewati properti yang tidak diinginkan
                             if (in_array($key, ['display'])) {
                                 continue;
                             }
 
-                            // Ubah border jadi 1px solid warna bodyStyle
                             if (in_array($key, ['border', 'border-top', 'border-right', 'border-bottom', 'border-left'])) {
                                 $cellStyles[$key] = 'none';
                             } else {
@@ -124,7 +117,6 @@ class PDFReportDesigner
                             }
                         }
 
-                        // Tambahkan vertical-align: top jika belum ada
                         if (!isset($cellStyles['vertical-align'])) {
                             $cellStyles['vertical-align'] = 'top';
                         }
@@ -243,8 +235,6 @@ class PDFReportDesigner
     public function getBodyMarginTop(): string
     {
         $bodyStyleArray = $this->parseStyleStringToArray($this->bodyStyle);
-
-        // Jika ada margin-top gunakan itu, jika tidak ada gunakan margin umum, default 20mm
         return $bodyStyleArray['margin-top']
             ?? $bodyStyleArray['margin']
             ?? '20mm';
@@ -253,8 +243,6 @@ class PDFReportDesigner
     public function getBodyMarginBottom(): string
     {
         $bodyStyleArray = $this->parseStyleStringToArray($this->bodyStyle);
-
-        // Jika ada margin-bottom gunakan itu, jika tidak ada gunakan margin umum, default 20mm
         return $bodyStyleArray['margin-bottom']
             ?? $bodyStyleArray['margin']
             ?? '20mm';
@@ -281,7 +269,6 @@ class PDFReportDesigner
         $replacements = [
             '{{nama_perusahaan}}' => $this->metaAuthor ?: 'Perusahaan',
             '{{current_date}}' => date('Y-m-d'),
-            // Tambahkan placeholder lainnya jika diperlukan
         ];
 
         return strtr($text, $replacements);
@@ -295,7 +282,6 @@ class PDFReportDesigner
 
         $bodyStyleArray = $this->parseStyleStringToArray($this->bodyStyle);
         $backgroundColor = $this->getBackgroundColor();
-        // Ambil margin dengan unit default mm (lebih akurat untuk PDF)
         $marginTop = $bodyStyleArray['margin-top'] ?? ($bodyStyleArray['margin'] ?? '20mm');
         $marginRight = $bodyStyleArray['margin-right'] ?? ($bodyStyleArray['margin'] ?? '20mm');
         $marginBottom = $bodyStyleArray['margin-bottom'] ?? ($bodyStyleArray['margin'] ?? '20mm');
@@ -347,11 +333,9 @@ class PDFReportDesigner
                     </style>
                 </head><body>';
 
-        // ================= DATA TABLE SECTION =================
         $html .= '<table style="' . $this->tableStyle . '">';
         $columns = array_keys($data[0]);
 
-        // Header
         $html .= '<thead><tr>';
         foreach ($columns as $index => $column) {
             $customLabel = $this->customHeaders[$column] ?? $column;
@@ -361,7 +345,6 @@ class PDFReportDesigner
         }
         $html .= '</tr></thead>';
 
-        // Data rows
         $html .= '<tbody>';
         foreach ($data as $row) {
             $html .= '<tr>';
@@ -387,7 +370,6 @@ class PDFReportDesigner
             return '';
         }
 
-        // Hitung total kolom maksimum (untuk fallback distribusi width)
         $maxCols = 0;
         foreach ($this->headerStyle['rows'] as $row) {
             $colCount = 0;
@@ -400,7 +382,6 @@ class PDFReportDesigner
             }
         }
 
-        // Bangun tabel header
         $html = '<table style="width: 100%; border-collapse: collapse;">';
 
         foreach ($this->headerStyle['rows'] as $row) {
@@ -414,16 +395,12 @@ class PDFReportDesigner
                 $colspan = $colspanVal > 1 ? 'colspan="' . $colspanVal . '"' : '';
                 $rowspan = $rowspanVal > 1 ? 'rowspan="' . $rowspanVal . '"' : '';
 
-                // Handle style
                 $styles = $cell['styles'] ?? [];
 
-                // Remove conflicting keys if width/height is separately defined
                 unset($styles['width'], $styles['height']);
 
-                // Convert styles array to string
                 $styleStr = $this->styleArrayToString($styles);
 
-                // Calculate or use defined width
                 if (isset($cell['width'])) {
                     $width = 'width: ' . $cell['width'] . ';';
                 } else {
@@ -452,7 +429,6 @@ class PDFReportDesigner
             return '';
         }
 
-        // Hitung total kolom maksimum (untuk fallback distribusi width)
         $maxCols = 0;
         foreach ($this->footerStyle['rows'] as $row) {
             $colCount = 0;
@@ -465,7 +441,6 @@ class PDFReportDesigner
             }
         }
 
-        // Bangun tabel footer dengan batas bawah agar tidak hilang dari kertas
         $html = '<div style="border-bottom: 1px solid transparent; min-height: 10mm;">';
         $html .= '<table style="width: 100%; border-collapse: collapse;">';
 
@@ -480,16 +455,12 @@ class PDFReportDesigner
                 $colspan = $colspanVal > 1 ? 'colspan="' . $colspanVal . '"' : '';
                 $rowspan = $rowspanVal > 1 ? 'rowspan="' . $rowspanVal . '"' : '';
 
-                // Handle style
                 $styles = $cell['styles'] ?? [];
 
-                // Remove conflicting keys if width/height is separately defined
                 unset($styles['width'], $styles['height']);
 
-                // Convert styles array to string
                 $styleStr = $this->styleArrayToString($styles);
 
-                // Calculate or use defined width
                 if (isset($cell['width'])) {
                     $width = 'width: ' . $cell['width'] . ';';
                 } else {
@@ -549,27 +520,4 @@ class PDFReportDesigner
         }
         return $styleArray;
     }
-
-    public function echo2file_arr($handle, $arr, $space)
-    {
-        $space += 2;
-        fwrite($handle, "\n");
-        foreach ($arr as $key => $value)
-            if (is_array($value)) {
-                fwrite($handle, $key . "=>");
-                echo2file_arr($handle, $value, $space);
-            } else {
-                fwrite($handle, str_repeat("", $space) . $key . "=>" . $value . "\n");
-            }
-    }
-
-    public function echo2file($par)
-    {
-        $handle = fopen("errorCheckPHP.txt", 'a');
-        if (is_array($par))
-            echo2file_arr($handle, $par, 0);
-        else
-            fwrite($handle, $par . "\n");
-    }
-
 }

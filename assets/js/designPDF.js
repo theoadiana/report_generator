@@ -48,7 +48,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         updateSelectorValues(newValues = {}) {
             for (const id in newValues) {
-                // Update manager selector
                 if (!manager.selectors[id]) {
                     manager.selectors[id] = {};
                 }
@@ -57,9 +56,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 const element = document.getElementById(id);
                 if (element) {
                     if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA' || element.tagName === 'SELECT') {
-                        element.value = newValues[id]; // Update form input jika ada
+                        element.value = newValues[id];
                     } else {
-                        element.innerText = newValues[id]; // Update contentEditable atau text element
+                        element.innerText = newValues[id];
                     }
                 }
             }
@@ -103,7 +102,7 @@ document.addEventListener("DOMContentLoaded", () => {
             .then(data => {
                 if (data.success) {
                     utilityManager.updateStyleGroupsFromInputs(styleGroups);
-                    generatePreview(); // Fetch data baru
+                    generatePreview();
                 } else {
                     alert('Error: ' + data.error);
                 }
@@ -114,8 +113,6 @@ document.addEventListener("DOMContentLoaded", () => {
             });
     });
 
-
-    // Registrasi default
     [
         "paperSize",
         "paperOrientation",
@@ -180,18 +177,9 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // Atur ukuran preview terlebih dahulu (fungsi Anda tetap dipanggil)
         previewManager.setPreviewSize(preview, selectorVars);
 
         const headers = Object.keys(data[0]);
-
-        // Placeholder otomatis
-        const currentDate = new Date().toISOString().split("T")[0];
-        const placeholderValues = {
-            "{{current_date}}": currentDate,
-            "{{nama_perusahaan}}": "Perusahaan Tambang",
-            "{{logo_url}}": "https://via.placeholder.com/100x50?text=Logo"
-        };
 
         const replacePlaceholders = (str) => previewManager.replacePlaceholders(str);
 
@@ -263,7 +251,6 @@ document.addEventListener("DOMContentLoaded", () => {
             </style>
         `;
 
-        // renderTable dengan penambahan class disabled
         function renderTable(styleKey = "headerStyle", tableId = "table_header_style") {
             const tableStyle = styleGroups?.[styleKey];
             if (!Array.isArray(tableStyle?.rows)) return '';
@@ -273,7 +260,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 ? styleGroups.headerDisplayRule === "none"
                 : styleGroups.footerDisplayRule === "none";
 
-            const disabledClass = isHeader ? "header-disabled" : "footer-disabled";
             const disabledText = isHeader ? "HEADER DISABLED" : "FOOTER DISABLED";
 
             return `
@@ -331,7 +317,6 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
         }
 
-        // Siapkan header & rows HTML agar tidak ada nested template complexity
         const headersHtml = headers.map(header => {
             const customHeader = (manager && manager.selectors && manager.selectors[`header_${header}`] && manager.selectors[`header_${header}`].content) || header;
             return `<th id="header_${header}" contentEditable="true" class="generatorPDF-th">${customHeader}</th>`;
@@ -341,11 +326,9 @@ document.addEventListener("DOMContentLoaded", () => {
             return `<tr>${headers.map(h => `<td class="generatorPDF-td">${row[h]}</td>`).join('')}</tr>`;
         }).join('');
 
-        // Tentukan class untuk header dan footer berdasarkan display rule
         const headerClass = styleGroups.headerDisplayRule === "none" ? "header-disabled" : "";
         const footerClass = styleGroups.footerDisplayRule === "none" ? "footer-disabled" : "";
 
-        // HTML akhir
         let html = `
             ${styleTag}
             <div class="generatorPDF">
@@ -371,7 +354,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         preview.innerHTML = html;
 
-        // Hitung margin top & bottom dalam mm → convert ke mm (langsung pakai mm biar konsisten)
         const rawMt = (styleGroups.bodyStyle && (styleGroups.bodyStyle["margin-top"] || styleGroups.bodyStyle["margin"])) || "0mm";
         const rawMb = (styleGroups.bodyStyle && (styleGroups.bodyStyle["margin-bottom"] || styleGroups.bodyStyle["margin"])) || "0mm";
 
@@ -380,18 +362,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const container = preview.querySelector(".generatorPDF");
         if (container) {
-            // Gunakan padding agar lebih natural, bukan height manipulasi
-            container.style.marginTop = "0";    // nolkan margin agar tidak dobel
-            container.style.marginBottom = "0"; // cegah margin native menambah tinggi
+            container.style.marginTop = "0";
+            container.style.marginBottom = "0";
             container.style.paddingTop = `${mtMm}mm`;
             container.style.paddingBottom = `${mbMm}mm`;
-
-            // biarkan height normal mengikuti isi
             container.style.height = "100.85%";
             container.style.boxSizing = "border-box";
         }
 
-        // Wait for layout to settle, kemudian posisikan footer secara presisi
         requestAnimationFrame(() => {
             const container = preview.querySelector('.generatorPDF') || preview;
             if (!container) return;
@@ -408,7 +386,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 footerWrapper.style.bottom = `${marginBottomMm}mm`;
 
                 if (headerTable) {
-                    // atur wrapper agar sama posisi dengan header
                     // footerWrapper.style.left = `${leftPx}px`;
                     // footerWrapper.style.width = `${widthPx}px`;
                 } else {
@@ -419,7 +396,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
 
-            // Tambahkan overlay text untuk header dan footer yang disabled
             if (styleGroups.headerDisplayRule === "none") {
                 const headerContainer = container.querySelector("#header-container");
                 if (headerContainer) {
@@ -451,7 +427,6 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
-        // === event listeners ===
         headers.forEach(headerName => {
             const id = `header_${headerName}`;
             const el = document.getElementById(id);
@@ -468,7 +443,6 @@ document.addEventListener("DOMContentLoaded", () => {
         tableEditor.initializeTable("table_footer_style", styleGroups);
     }
 
-    // Tombol tambah selector
     const addSelectorBtn = document.getElementById("addSelectorBtn");
     addSelectorBtn.addEventListener("click", () => {
         const newId = document.getElementById("newSelectorId").value;
@@ -487,7 +461,6 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("newSelectorId").value = "";
     });
 
-    // ✅ Fungsi ini bisa kamu panggil untuk keperluan seperti generatePreview()
     PDFDesigner.getSelectorValues = () => manager.getAllValuesAsObject();
 
     utilityManager.updateSelectorTable(manager);
@@ -506,7 +479,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const updatedHeaderStyle = utilityManager.buildStyleStructureFromDOM("table_header_style");
         const updatedFooterStyle = utilityManager.buildStyleStructureFromDOM("table_footer_style");
 
-        // Ambil header hasil edit yang dinamakan "header_<field>"
         const customHeaders = {};
         for (const key in values) {
             if (key.startsWith("header_")) {
@@ -532,10 +504,9 @@ document.addEventListener("DOMContentLoaded", () => {
             headerDisplayRule: styleGroups.headerDisplayRule || "every-page",
             footerDisplayRule: styleGroups.footerDisplayRule || "every-page",
             pageNumberPosition: styleGroups.pageNumberPosition || "none",
-            ...extraParams // Untuk menambahkan parameter spesifik seperti action
+            ...extraParams
         });
 
-        // Tambahkan custom size jika ada
         if (paperSize === "custom") {
             const width = getValue(selectorVars.customWidth) || '210';
             const height = getValue(selectorVars.customHeight) || '297';
@@ -560,7 +531,6 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // ambil hanya 5 data pertama
         cachedData = result.data.slice(0, 5);
         previewManager.setCachedData(cachedData);
         renderPreview(cachedData);

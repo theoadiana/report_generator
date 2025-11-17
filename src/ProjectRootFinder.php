@@ -12,31 +12,20 @@ class ProjectRootFinder
         if (self::$cache !== null) {
             return self::$cache;
         }
-        
-        // Coba beberapa strategi secara berurutan
-        
-        // 1. Cek dari vendor directory (prioritas utama untuk kasus composer)
         if ($root = self::fromVendor()) {
             return self::$cache = $root;
         }
-        
-        // 2. Cek environment variable (jika ada)
         if ($root = self::fromEnvironment()) {
             return self::$cache = $root;
         }
-        
-        // 3. Cek dari current working directory
         if ($root = self::fromCurrentDirectory()) {
             return self::$cache = $root;
         }
-        
-        // 4. Fallback ke current directory
         return self::$cache = getcwd();
     }
     
     private static function fromEnvironment(): ?string
     {
-        // Cek environment variables yang umum digunakan
         $envVars = ['PROJECT_ROOT', 'APP_ROOT', 'ROOT_PATH'];
         
         foreach ($envVars as $envVar) {
@@ -58,12 +47,10 @@ class ProjectRootFinder
     
     private static function fromVendor(): ?string
     {
-        // Strategi 1: Cari dari path class ini sendiri
         $reflector = new ReflectionClass(self::class);
         $classPath = $reflector->getFileName();
         $classDir = dirname($classPath);
         
-        // Jika class berada di dalam vendor, cari root project
         if (strpos($classDir, DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR) !== false) {
             $rootFromClass = self::findProjectRootFromVendorPath($classDir);
             if ($rootFromClass) {
@@ -71,7 +58,6 @@ class ProjectRootFinder
             }
         }
         
-        // Strategi 2: Cari melalui Composer autoloader
         if (class_exists('Composer\Autoload\ClassLoader')) {
             $composerReflector = new ReflectionClass('Composer\Autoload\ClassLoader');
             $vendorPath = dirname($composerReflector->getFileName());
@@ -87,18 +73,15 @@ class ProjectRootFinder
     
     private static function findProjectRootFromVendorPath(string $vendorPath): ?string
     {
-        // Split path berdasarkan 'vendor'
         $parts = explode(DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR, $vendorPath);
         
         if (count($parts) > 1) {
             $potentialRoot = $parts[0];
             
-            // Verifikasi bahwa ini benar-benar root project
             if (self::isProjectRoot($potentialRoot)) {
                 return $potentialRoot;
             }
             
-            // Jika verifikasi gagal, coba naik satu level
             $parentDir = dirname($potentialRoot);
             if (self::isProjectRoot($parentDir)) {
                 return $parentDir;
@@ -133,7 +116,6 @@ class ProjectRootFinder
     
     private static function isProjectRoot(string $path): bool
     {
-        // Indicator yang lebih kuat untuk project root
         $indicators = [
             '/composer.json',
             '/composer.lock',
@@ -147,8 +129,6 @@ class ProjectRootFinder
                 return true;
             }
         }
-        
-        // Cek jika ini adalah root project dengan struktur umum
         $commonDirs = ['/src', '/app', '/public', '/config', '/tests'];
         $dirCount = 0;
         
@@ -157,12 +137,9 @@ class ProjectRootFinder
                 $dirCount++;
             }
         }
-        
-        // Jika menemukan minimal 2 directory umum, anggap sebagai project root
         return $dirCount >= 2;
     }
     
-    // Helper method untuk mendapatkan path relatif dari root
     public static function path(string $relativePath = ''): string
     {
         $root = self::find();
@@ -171,13 +148,11 @@ class ProjectRootFinder
             return $root;
         }
         
-        // Normalize path separator
         $relativePath = ltrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $relativePath), DIRECTORY_SEPARATOR);
         
         return $root . DIRECTORY_SEPARATOR . $relativePath;
     }
     
-    // Method untuk debug
     public static function debug(): void
     {
         $reflector = new ReflectionClass(self::class);
