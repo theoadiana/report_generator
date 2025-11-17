@@ -4,7 +4,9 @@ use Exception;
 session_start();
 
 require_once __DIR__ . '/../vendor/autoload.php';
-require_once __DIR__ . '/../reportGenerator.config.php';
+$rootPath = ProjectRootFinder::find();
+
+require_once $rootPath . '/reportGenerator.config.php';
 
 // Buat instance ReportGenerator
 $reportGenerator = new ReportGenerator($dbname, $username, $password, $host);
@@ -16,8 +18,6 @@ if (isset($_SESSION['report_query'])) {
         $reportGenerator->getDesignerPDF()->setQuery($_SESSION['report_query']); // ✅ Simpan ke designer
     }
 }
-
-
 
 // Handle edit/rename template
 if (isset($_GET['action']) && $_GET['action'] === 'edit_template') {
