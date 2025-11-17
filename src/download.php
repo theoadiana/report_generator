@@ -4,22 +4,8 @@ use Exception;
 session_start();
 
 require_once __DIR__ . '/../vendor/autoload.php';
-// require_once __DIR__ . '/DatabaseConnection.php';
-// require_once __DIR__ . '/ExportHandler.php';
-// require_once __DIR__ . '/ExportHandlerCSV.php';
-// require_once __DIR__ . '/ExportHandlerPDF.php';
-// require_once __DIR__ . '/ExportHandlerExcel.php';
-// require_once __DIR__ . '/ReportGenerator.php';
-// require_once __DIR__ . '/PDFReportDesigner.php';
-// require_once __DIR__ . '/Utility.php';
 require_once __DIR__ . '/../reportGenerator.config.php';
 
-// Untuk debug, panggil ini dulu
-// ProjectRootFinder::debug();
-
-// Kemudian cari root
-// $rootPath = ProjectRootFinder::find();
-// echo "Project root: " . $rootPath . "\n";
 // Buat instance ReportGenerator
 $reportGenerator = new ReportGenerator($dbname, $username, $password, $host);
 

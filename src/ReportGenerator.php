@@ -2,12 +2,6 @@
 namespace Theob\ReportGenerator;
 use PDO, PDOException;
 
-// require_once 'DatabaseConnection.php';
-// require_once 'ExportHandler.php';
-// require_once 'ExportHandlerCSV.php';
-// require_once 'ExportHandlerExcel.php';
-// require_once 'ExportHandlerPDF.php';
-
 class ReportGenerator extends DatabaseConnection
 {
     private ?PDFReportDesigner $designer;

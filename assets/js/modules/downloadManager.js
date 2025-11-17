@@ -6,7 +6,7 @@ export class DownloadManager {
     async downloadPDF() {
         try {
             const params = this.buildPDFParams({ type: 'pdf' });
-            const url = `/src/download.php?${params.toString()}`;
+            const url = `/vendor/theob/report-generator/src/download.php?${params.toString()}`;
             
             console.log("Download PDF URL:", url);
             await this.handleDownload(url, 'pdf');
@@ -20,7 +20,7 @@ export class DownloadManager {
     async downloadCSV() {
         try {
             const params = this.buildPDFParams({ type: 'csv' });
-            const url = `/src/download.php?${params.toString()}`;
+            const url = `/vendor/theob/report-generator/src/download.php?${params.toString()}`;
             
             await this.handleDownload(url, 'csv');
             
@@ -33,7 +33,7 @@ export class DownloadManager {
     async downloadExcel() {
         try {
             const params = this.buildPDFParams({ type: 'xlsx' });
-            const url = `/src/download.php?${params.toString()}`;
+            const url = `/vendor/theob/report-generator/src/download.php?${params.toString()}`;
             
             await this.handleDownload(url, 'excel');
             

@@ -89,7 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         console.log('Data sent to the backend:', { query: query });
 
-        fetch('src/download.php', {
+        fetch('vendor/theob/report-generator/src/download.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ query: query })
@@ -162,7 +162,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     (async () => {
         try {
-            const data = await fetch("src/download.php?action=get_data").then(res => res.json());
+            const data = await fetch("vendor/theob/report-generator/src/download.php?action=get_data").then(res => res.json());
             const columnCount = Object.keys(data[0]).length;
             const percentage = (100 / columnCount).toFixed(2) + "%";
 
@@ -550,7 +550,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function generatePreview() {
         const params = buildPDFParams();
-        const url = `/src/download.php?${params.toString()}&action=get_data`;
+        const url = `/vendor/theob/report-generator/src/download.php?${params.toString()}&action=get_data`;
 
         const response = await fetch(url);
         const result = await response.json();

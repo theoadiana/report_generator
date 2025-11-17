@@ -27,7 +27,7 @@ $content = <<<'EOT'
     </style>
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <script type="module" defer src="assets/js/designPDF.js"></script>
+    <script type="module" defer src="vendor/theob/report-generator/assets/js/designPDF.js"></script>
 </head>
 
 <body class="bg-gray-100">

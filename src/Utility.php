@@ -1,6 +1,5 @@
 <?php
 namespace Theob\ReportGenerator;
-use ReflectionClass;
 
 function saveHTMLTemplate_arr($handle, $arr, $space)
 {
