@@ -17,14 +17,14 @@ v1.0.0
 
 ## How to install
 * Open the terminal, type 
-    composer require theob/report-generator
-* Open vendor/theob/report-generator/composer.json adn run
-    "post-install-cmd": [
-        "php scripts/make-config.php",
-        "php scripts/make-example.php"
-    ]
+    - composer require theob/report-generator
+* Open vendor/theob/report-generator/composer.json
+    - run "post-install-cmd": [
+            "php scripts/make-config.php",
+            "php scripts/make-example.php"
+        ]
 * Open reportGenerator.config.php
-    change host, dbname, username, password according to your project
+    - change host, dbname, username, password according to your project
 
 
 
